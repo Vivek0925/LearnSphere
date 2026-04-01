@@ -1,9 +1,10 @@
 import React from 'react';
+
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, FileQuestion, StickyNote,
-  Video, TrendingUp, X, Sparkles, ChevronRight
+  Video, TrendingUp, X, Sparkles, ChevronRight ,Bot
 } from 'lucide-react';
 
 const navItems = [
@@ -13,6 +14,7 @@ const navItems = [
   { path: '/notes', icon: StickyNote, label: 'Notes' },
   { path: '/videos', icon: Video, label: 'Smart Videos' },
   { path: '/progress', icon: TrendingUp, label: 'My Progress' },
+  { path: '/chat', icon: Bot, label: 'AI Tutor', highlight: true },
 ];
 
 export default function Sidebar({ open, onClose }) {

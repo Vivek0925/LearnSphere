@@ -1,4 +1,5 @@
 import React from 'react';
+import ChatbotPage from './pages/ChatbotPage';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
@@ -20,6 +21,7 @@ import Layout from './components/layout/Layout';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
+  
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
       <div className="flex flex-col items-center gap-4">
@@ -51,6 +53,7 @@ function AppRoutes() {
         <Route path="notes" element={<NotesPage />} />
         <Route path="videos" element={<VideosPage />} />
         <Route path="progress" element={<ProgressPage />} />
+        <Route path="chat" element={<ChatbotPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>

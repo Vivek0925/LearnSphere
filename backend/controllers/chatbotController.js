@@ -1,68 +1,109 @@
-const Note = require('../models/Note');
-const PYQ = require('../models/PYQ');
-
-const knowledgeBase = {
-  'binary search': 'Binary Search is an efficient algorithm for finding an element in a sorted array. It works by repeatedly dividing the search space in half. Time complexity: O(log n). It compares the target with the middle element and eliminates half the array in each step.',
-  'sorting': 'Common sorting algorithms: Bubble Sort (O(n²)), Selection Sort (O(n²)), Insertion Sort (O(n²) worst), Merge Sort (O(n log n)), Quick Sort (O(n log n) avg), Heap Sort (O(n log n)). Merge Sort and Heap Sort guarantee O(n log n).',
-  'deadlock': 'Deadlock occurs when processes are stuck waiting for resources held by each other. Four conditions: Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait. Prevention: deny one condition. Detection: use resource allocation graph.',
-  'normalization': 'Normalization eliminates redundancy: 1NF (atomic values), 2NF (no partial dependency), 3NF (no transitive dependency), BCNF (every determinant is a candidate key). Higher normal forms ensure better data integrity.',
-  'osi model': 'OSI has 7 layers: Physical (bits), Data Link (frames/MAC), Network (routing/IP), Transport (TCP/UDP), Session (sessions), Presentation (encoding), Application (HTTP/FTP). Each layer serves the one above it.',
-  'tcp': 'TCP (Transmission Control Protocol) is connection-oriented, reliable, ordered delivery with error checking. It uses 3-way handshake (SYN, SYN-ACK, ACK). Used for HTTP, FTP, SMTP.',
-  'virtual memory': 'Virtual memory allows processes to use more memory than physically available by using disk space. Uses paging/segmentation. Page replacement algorithms: FIFO, LRU (Least Recently Used), Optimal.',
-  'acid': 'ACID properties: Atomicity (all or nothing), Consistency (valid state transitions), Isolation (transactions independent), Durability (committed changes persist). Essential for reliable database transactions.',
-  'default': 'I can help you with topics like Data Structures (trees, graphs, sorting), Algorithms, Operating Systems (scheduling, deadlock), DBMS (normalization, SQL), Computer Networks (OSI, TCP/IP), and Software Engineering. Ask me anything specific!'
-};
-
-const findAnswer = (query) => {
-  const q = query.toLowerCase();
-  for (const [key, answer] of Object.entries(knowledgeBase)) {
-    if (q.includes(key)) return answer;
-  }
-  return knowledgeBase.default;
-};
+const Note = require("../models/Note");
+const PYQ = require("../models/PYQ");
 
 exports.chat = async (req, res) => {
   try {
-    const { message, context } = req.body;
-    if (!message) return res.status(400).json({ message: 'Message required' });
+    const { message, history = [] } = req.body;
 
-    const lowerMsg = message.toLowerCase();
-    let response = '';
-    let sources = [];
+    if (!message) {
+      return res.status(400).json({ message: "Message required" });
+    }
 
-    // Search notes
-    if (lowerMsg.includes('note') || lowerMsg.includes('explain') || lowerMsg.includes('what is') || lowerMsg.includes('define')) {
-      const notes = await Note.find({ $text: { $search: message } }).limit(2).catch(() => []);
-      if (notes.length > 0) {
-        sources = notes.map(n => ({ type: 'note', title: n.title, subject: n.subjectName }));
+    // AI Tutor System Prompt
+    const systemPrompt = `You are LearnSphere AI, an expert engineering tutor helping students with:
+
+Subjects:
+- Data Structures (arrays, trees, graphs, hashing, dynamic programming)
+- Algorithms (sorting, searching, graph algorithms, complexity analysis)
+- Operating Systems (scheduling, deadlock, memory management, synchronization)
+- DBMS (normalization, SQL, transactions, indexing, ER models)
+- Computer Networks (OSI model, TCP/IP, routing, application layer)
+- Software Engineering (SDLC, testing, UML, design patterns)
+
+Guidelines:
+- Give clear, structured explanations
+- Use bullet points when possible
+- Provide real examples
+- Include time & space complexity for algorithms
+- Provide step-by-step explanations
+- Use simple language for students
+- Encourage learning`;
+
+    // limit history to last 10 messages
+    const messages = [
+      ...history.slice(-10),
+      { role: "user", content: message },
+    ];
+
+    // Models with fallback
+    const models = [
+      "deepseek/deepseek-chat:free",
+      "nousresearch/hermes-2-pro-llama-3-8b:free",
+      "openchat/openchat-7b:free",
+    ];
+
+    let aiResponse = null;
+    let usedModel = null;
+
+    // Try models one by one if a model fails
+    for (const model of models) {
+      try {
+        const response = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "http://localhost:5173",
+              "X-Title": "LearnSphere AI Tutor",
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: "system", content: systemPrompt },
+                ...messages,
+              ],
+              max_tokens: 1500,
+              temperature: 0.7,
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const err = await response.json();
+          console.log(`Model failed: ${model}`, err);
+          continue;
+        }
+
+        const data = await response.json();
+
+        aiResponse =
+          data.choices?.[0]?.message?.content ||
+          "Sorry, I couldn't generate a response.";
+
+        usedModel = data.model || model;
+
+        break;
+      } catch (err) {
+        console.log(`Model crashed: ${model}`);
+        continue;
       }
     }
 
-    // PYQ trends query
-    if (lowerMsg.includes('trend') || lowerMsg.includes('important') || lowerMsg.includes('exam')) {
-      const pyqs = await PYQ.find().limit(5);
-      if (pyqs.length > 0) {
-        const allTopics = pyqs.flatMap(p => p.topicAnalysis);
-        const topTopics = allTopics.sort((a, b) => b.importanceScore - a.importanceScore).slice(0, 3);
-        response = `Based on PYQ analysis, the most important topics are: ${topTopics.map(t => `${t.topic} (score: ${t.importanceScore})`).join(', ')}. Focus on these for your exam preparation!`;
-        sources = [{ type: 'pyq', title: 'PYQ Analysis' }];
-      }
-    }
-
-    if (!response) {
-      response = findAnswer(message);
-    }
-
-    // Simulate slight delay for AI feel
-    setTimeout(() => {
-      res.json({
-        response,
-        sources,
-        timestamp: new Date(),
-        model: 'LearnSphere AI (Mock)'
+    if (!aiResponse) {
+      return res.status(500).json({
+        message: "All AI models failed. Please try again later.",
       });
-    }, 500);
+    }
+
+    res.json({
+      response: aiResponse,
+      model: usedModel,
+      timestamp: new Date(),
+    });
   } catch (err) {
+    console.error("Chatbot error:", err);
     res.status(500).json({ message: err.message });
   }
 };

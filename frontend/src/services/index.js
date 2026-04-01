@@ -23,7 +23,7 @@ export const progressService = {
 };
 
 export const chatbotService = {
-  sendMessage: (message, context) => api.post('/chatbot/message', { message, context }),
+  sendMessage: (message, history = []) => api.post('/chatbot/message', { message, history }),
 };
 
 export const notesService = {

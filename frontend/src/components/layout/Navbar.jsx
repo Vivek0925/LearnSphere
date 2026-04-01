@@ -43,9 +43,7 @@ export default function Navbar({ onMenuClick }) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('toggleChatbot'));
-            }}
+            onClick={() => navigate('/chat')}
             className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all"
             style={{
               background: 'linear-gradient(135deg, rgba(111,97,255,0.15), rgba(143,135,255,0.1))',
