@@ -23,7 +23,23 @@ export const progressService = {
 };
 
 export const chatbotService = {
-  sendMessage: (message, history = []) => api.post('/chatbot/message', { message, history }),
+  sendMessage: (message, history = [], file = null, meta = {}) => {
+    // If file attached → use FormData
+    if (file) {
+      const formData = new FormData();
+      formData.append('pdf', file);
+      formData.append('message', message || '');
+      formData.append('history', JSON.stringify(history));
+      if (meta.subjectId) formData.append('subjectId', meta.subjectId);
+      if (meta.examYear)  formData.append('examYear', meta.examYear);
+      if (meta.examType)  formData.append('examType', meta.examType);
+      return api.post('/chatbot/message', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    // Normal text message
+    return api.post('/chatbot/message', { message, history });
+  }
 };
 
 export const notesService = {
