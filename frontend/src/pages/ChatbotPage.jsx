@@ -14,20 +14,22 @@ import {
   Lightbulb,
   ChevronDown,
   Loader2,
+  Paperclip,
+  X,
+  FileText,
 } from "lucide-react";
 import { chatbotService } from "../services";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
-import { Paperclip, X, FileText } from "lucide-react";
 
-// Markdown-like renderer for AI responses
+// ── Markdown renderer ─────────────────────────────────────────────────────────
 function MessageContent({ text }) {
   const lines = text.split("\n");
   return (
     <div className="space-y-1.5 text-sm leading-relaxed">
       {lines.map((line, i) => {
         if (!line.trim()) return <div key={i} className="h-1" />;
-        // Bold **text**
+
         const parts = line.split(/(\*\*.*?\*\*)/g);
         const rendered = parts.map((p, j) =>
           p.startsWith("**") && p.endsWith("**") ? (
@@ -42,21 +44,25 @@ function MessageContent({ text }) {
             p
           ),
         );
-        // Bullet points
+
         if (line.trim().startsWith("- ") || line.trim().startsWith("• ")) {
           return (
             <div key={i} className="flex items-start gap-2 ml-2">
               <span className="w-1.5 h-1.5 rounded-full bg-primary-400 mt-2 flex-shrink-0" />
               <span>
-                {rendered.map((p, j) =>
+                {rendered.map((p) =>
                   typeof p === "string" ? p.replace(/^[-•]\s*/, "") : p,
                 )}
               </span>
             </div>
           );
         }
-        // Code blocks `code`
-        if (line.trim().startsWith("`") && line.trim().endsWith("`")) {
+
+        if (
+          line.trim().startsWith("`") &&
+          line.trim().endsWith("`") &&
+          line.trim().length > 2
+        ) {
           return (
             <code
               key={i}
@@ -71,7 +77,7 @@ function MessageContent({ text }) {
             </code>
           );
         }
-        // Numbered list
+
         if (/^\d+\.\s/.test(line.trim())) {
           return (
             <div key={i} className="flex items-start gap-2 ml-2">
@@ -79,14 +85,14 @@ function MessageContent({ text }) {
                 {line.trim().match(/^(\d+)\./)?.[1]}.
               </span>
               <span>
-                {rendered.map((p, j) =>
+                {rendered.map((p) =>
                   typeof p === "string" ? p.replace(/^\d+\.\s*/, "") : p,
                 )}
               </span>
             </div>
           );
         }
-        // Headings ###
+
         if (line.startsWith("### ")) {
           return (
             <p
@@ -109,12 +115,14 @@ function MessageContent({ text }) {
             </p>
           );
         }
+
         return <p key={i}>{rendered}</p>;
       })}
     </div>
   );
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────────
 const SUGGESTED_PROMPTS = [
   { icon: BookOpen, label: "Explain AVL trees", color: "#6366f1" },
   {
@@ -137,18 +145,19 @@ const SUGGESTED_PROMPTS = [
 ];
 
 const FREE_MODELS = [
-  { id: "google/gemma-2-9b-it:free", label: "Gemma 2 (Best Tutor)" },
-  { id: "microsoft/phi-3-mini-128k-instruct:free", label: "Phi-3 Mini (Fast)" },
-  { id: "qwen/qwen-2-7b-instruct:free", label: "Qwen 2 (Reasoning)" },
+  { id: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Free)" },
+  { id: "gemini-1.5-pro",   label: "Gemini 1.5 Pro (Free)"   },
+  { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash (Free)" },
 ];
 
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function ChatbotPage() {
   const { user } = useAuth();
   const [messages, setMessages] = useState([
     {
       id: 1,
       role: "assistant",
-      text: `Hi ${user?.name?.split(" ")[0] || "there"}! 👋 I'm your LearnSphere AI tutor.\n\n How can i Help You`,
+      text: `Hi ${user?.name?.split(" ")[0] || "there"}! 👋 I'm your LearnSphere AI tutor.\n\nHow can I help you today?`,
       time: new Date(),
     },
   ]);
@@ -159,17 +168,16 @@ export default function ChatbotPage() {
   );
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
-  const bottomRef = useRef(null);
-  const inputRef = useRef(null);
-  const textareaRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
+
+  const bottomRef = useRef(null);
+  const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -187,10 +195,10 @@ export default function ChatbotPage() {
     const msg = text || input.trim();
     if (!msg && !attachedFile) return;
     if (loading) return;
+
     setInput("");
     setShowModelPicker(false);
 
-    // Build user message bubble
     const userMsg = {
       id: Date.now(),
       role: "user",
@@ -209,6 +217,9 @@ export default function ChatbotPage() {
         msg,
         getHistory(),
         fileToSend,
+        {
+          model: selectedModel,
+        },
       );
       setMessages((prev) => [
         ...prev,
@@ -218,6 +229,7 @@ export default function ChatbotPage() {
           text: res.data.response,
           model: res.data.model,
           wasPDF: res.data.wasPDF,
+          fallback: !!res.data.fallback,
           time: new Date(),
         },
       ]);
@@ -267,9 +279,17 @@ export default function ChatbotPage() {
       minute: "2-digit",
     });
 
+  const getAssistantSourceLabel = (msg) => {
+    if (msg.fallback || msg.model === "local-fallback") return "Local fallback";
+    if (msg.model)
+      return `Live AI · ${msg.model.split("/").pop()?.split(":")[0] || msg.model}`;
+    return "Live AI";
+  };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full min-h-0 animate-fade-in">
-      {/* ── Header ── */}
+    <div className="flex flex-col h-full animate-fade-in">
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -277,8 +297,7 @@ export default function ChatbotPage() {
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700
-                       flex items-center justify-center shadow-lg"
+            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg"
             style={{ boxShadow: "0 8px 24px rgba(111,97,255,0.3)" }}
           >
             <Sparkles size={20} className="text-white" />
@@ -290,7 +309,15 @@ export default function ChatbotPage() {
             >
               AI Tutor
             </h1>
-            <div className="flex items-center gap-1.5"></div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span
+                className="text-xs"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                Online · Powered by OpenRouter
+              </span>
+            </div>
           </div>
         </div>
 
@@ -344,8 +371,7 @@ export default function ChatbotPage() {
                           setSelectedModel(model.id);
                           setShowModelPicker(false);
                         }}
-                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs transition-all
-                                   hover:bg-[var(--color-surface-2)] flex items-center justify-between"
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs transition-all hover:bg-[var(--color-surface-2)] flex items-center justify-between"
                         style={{
                           color:
                             selectedModel === model.id
@@ -381,7 +407,7 @@ export default function ChatbotPage() {
         </div>
       </motion.div>
 
-      {/* ── Chat card ── */}
+      {/* Chat card */}
       <div className="flex-1 flex flex-col min-h-0 card overflow-hidden">
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 scroll-smooth">
@@ -395,12 +421,11 @@ export default function ChatbotPage() {
             >
               {/* Avatar */}
               <div
-                className={`w-9 h-9 rounded-2xl flex-shrink-0 flex items-center justify-center
-                              font-bold text-sm shadow-md ${
-                                msg.role === "user"
-                                  ? "bg-gradient-to-br from-primary-400 to-primary-600 text-white"
-                                  : "bg-gradient-to-br from-primary-500 to-primary-700 text-white"
-                              }`}
+                className={`w-9 h-9 rounded-2xl flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md ${
+                  msg.role === "user"
+                    ? "bg-gradient-to-br from-primary-400 to-primary-600 text-white"
+                    : "bg-gradient-to-br from-primary-500 to-primary-700 text-white"
+                }`}
               >
                 {msg.role === "user" ? (
                   user?.name?.[0]?.toUpperCase() || <User size={16} />
@@ -409,10 +434,9 @@ export default function ChatbotPage() {
                 )}
               </div>
 
-              {/* Bubble + meta */}
+              {/* Bubble */}
               <div
-                className={`flex flex-col gap-1 max-w-[80%]
-                              ${msg.role === "user" ? "items-end" : "items-start"}`}
+                className={`flex flex-col gap-1 max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"}`}
               >
                 <div
                   className={`px-4 py-3 rounded-2xl ${
@@ -433,17 +457,37 @@ export default function ChatbotPage() {
                         }
                   }
                 >
+                  {/* Message text */}
                   {msg.role === "user" ? (
                     <p className="text-sm leading-relaxed">{msg.text}</p>
                   ) : (
                     <MessageContent text={msg.text} />
                   )}
+
+                  {/* ── PDF badge inside user bubble (Step F) ── */}
+                  {msg.fileName && (
+                    <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/20">
+                      <FileText size={12} className="opacity-80" />
+                      <span className="text-xs opacity-80 truncate max-w-[180px]">
+                        {msg.fileName}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* PDF analyzed badge on AI response */}
+                  {msg.wasPDF && msg.role === "assistant" && (
+                    <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-primary-400/20">
+                      <FileText size={12} className="text-primary-400" />
+                      <span className="text-xs text-primary-400 font-medium">
+                        PYQ Analysis Complete
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Timestamp + model + copy — visible on hover */}
+                {/* Timestamp + model + copy row */}
                 <div
-                  className={`flex items-center gap-2 px-1 opacity-0 group-hover:opacity-100
-                                transition-opacity ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+                  className={`flex items-center gap-2 px-1 opacity-0 group-hover:opacity-100 transition-opacity ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
                 >
                   <span
                     className="text-xs"
@@ -451,16 +495,25 @@ export default function ChatbotPage() {
                   >
                     {formatTime(msg.time)}
                   </span>
-                  {msg.model && (
+                  {msg.role === "assistant" && (msg.model || msg.fallback) && (
                     <span
                       className="text-xs px-1.5 py-0.5 rounded-md"
                       style={{
-                        background: "var(--color-surface-2)",
-                        color: "var(--color-text-muted)",
-                        border: "1px solid var(--color-border)",
+                        background:
+                          msg.fallback || msg.model === "local-fallback"
+                            ? "rgba(245, 158, 11, 0.12)"
+                            : "rgba(16, 185, 129, 0.12)",
+                        color:
+                          msg.fallback || msg.model === "local-fallback"
+                            ? "#f59e0b"
+                            : "#10b981",
+                        border:
+                          msg.fallback || msg.model === "local-fallback"
+                            ? "1px solid rgba(245, 158, 11, 0.25)"
+                            : "1px solid rgba(16, 185, 129, 0.25)",
                       }}
                     >
-                      {msg.model.split("/").pop()?.split(":")[0] || msg.model}
+                      {getAssistantSourceLabel(msg)}
                     </span>
                   )}
                   {msg.role === "assistant" && !msg.isError && (
@@ -488,10 +541,7 @@ export default function ChatbotPage() {
               animate={{ opacity: 1, y: 0 }}
               className="flex gap-3"
             >
-              <div
-                className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700
-                              flex items-center justify-center flex-shrink-0"
-              >
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0">
                 <Sparkles size={16} className="text-white" />
               </div>
               <div
@@ -506,7 +556,7 @@ export default function ChatbotPage() {
                   className="text-sm"
                   style={{ color: "var(--color-text-muted)" }}
                 >
-                  Thinking...
+                  {attachedFile ? "Analyzing PDF..." : "Thinking..."}
                 </span>
               </div>
             </motion.div>
@@ -515,7 +565,7 @@ export default function ChatbotPage() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Suggested prompts — only shown before first message */}
+        {/* Suggested prompts — only when no messages yet */}
         <AnimatePresence>
           {messages.length <= 1 && !loading && (
             <motion.div
@@ -538,8 +588,7 @@ export default function ChatbotPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.04 }}
                     onClick={() => sendMessage(s.label)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium
-                               transition-all hover:scale-105 active:scale-95"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:scale-105 active:scale-95"
                     style={{
                       background: `${s.color}15`,
                       color: s.color,
@@ -555,76 +604,121 @@ export default function ChatbotPage() {
           )}
         </AnimatePresence>
 
-        {/* Input bar div — replace your existing one */}
-        <div
-          className="flex items-end gap-2 p-2 rounded-2xl"
-          style={{
-            background: "var(--color-surface-2)",
-            border: "1px solid var(--color-border)",
-          }}
-        >
-          {/* Paperclip button */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                setAttachedFile(file);
-                toast.success(`${file.name} attached`);
-              }
-              e.target.value = "";
-            }}
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 rounded-xl transition-all flex-shrink-0 hover:bg-primary-500/10"
-            style={{
-              color: attachedFile
-                ? "var(--color-primary)"
-                : "var(--color-text-muted)",
-            }}
-            title="Attach PYQ PDF"
-          >
-            <Paperclip size={18} />
-          </button>
+        {/* Bottom section — file preview + input */}
+        <div className="p-3 md:p-4 border-t border-[var(--color-border)] flex-shrink-0">
+          {/* File preview pill */}
+          <AnimatePresence>
+            {attachedFile && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                className="flex items-center gap-2 px-3 py-2 mb-2 rounded-xl w-fit"
+                style={{
+                  background: "rgba(111,97,255,0.12)",
+                  border: "1px solid rgba(111,97,255,0.3)",
+                }}
+              >
+                <FileText size={14} className="text-primary-400" />
+                <span className="text-xs font-medium text-primary-400 max-w-[200px] truncate">
+                  {attachedFile.name}
+                </span>
+                <button
+                  onClick={() => setAttachedFile(null)}
+                  className="ml-1 hover:text-red-400 transition-colors"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  <X size={12} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
-            placeholder={
-              attachedFile
-                ? `Ask about ${attachedFile.name}...`
-                : "Ask anything or attach a PYQ PDF..."
-            }
-            rows={1}
-            className="flex-1 bg-transparent px-2 py-2 text-sm outline-none resize-none leading-relaxed"
+          {/* Input bar */}
+          <div
+            className="flex items-end gap-2 p-2 rounded-2xl"
             style={{
-              color: "var(--color-text)",
-              maxHeight: "160px",
-              minHeight: "40px",
+              background: "var(--color-surface-2)",
+              border: "1px solid var(--color-border)",
             }}
-          />
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => sendMessage()}
-            disabled={(!input.trim() && !attachedFile) || loading}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0 disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, #6f61ff, #8f87ff)" }}
           >
-            <Send size={16} />
-          </motion.button>
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setAttachedFile(file);
+                  toast.success(`${file.name} attached`);
+                }
+                e.target.value = "";
+              }}
+            />
+
+            {/* Paperclip button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 rounded-xl transition-all flex-shrink-0 hover:bg-primary-500/10"
+              style={{
+                color: attachedFile
+                  ? "var(--color-primary)"
+                  : "var(--color-text-muted)",
+              }}
+              title="Attach PYQ PDF"
+            >
+              <Paperclip size={18} />
+            </button>
+
+            {/* Textarea */}
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              placeholder={
+                attachedFile
+                  ? `Ask about ${attachedFile.name}...`
+                  : "Ask anything or attach a PYQ PDF..."
+              }
+              rows={1}
+              className="flex-1 bg-transparent px-2 py-2 text-sm outline-none resize-none leading-relaxed"
+              style={{
+                color: "var(--color-text)",
+                maxHeight: "160px",
+                minHeight: "40px",
+              }}
+            />
+
+            {/* Send button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => sendMessage()}
+              disabled={(!input.trim() && !attachedFile) || loading}
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0 disabled:opacity-40 transition-all"
+              style={{
+                background: "linear-gradient(135deg, #6f61ff, #8f87ff)",
+              }}
+            >
+              <Send size={16} />
+            </motion.button>
+          </div>
+
+          <p
+            className="text-xs text-center mt-2"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Powered by OpenRouter · Attach PYQ PDFs for AI analysis ·
+            Shift+Enter for new line
+          </p>
         </div>
       </div>
     </div>

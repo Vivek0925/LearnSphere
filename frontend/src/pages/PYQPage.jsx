@@ -1,21 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileQuestion, BarChart2, TrendingUp, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { FileQuestion, BarChart2, ChevronDown, ChevronUp, Bot, MessageSquare } from 'lucide-react';
 import { pyqService, subjectService } from '../services';
 import { LoadingSpinner, PageHeader, TrendBadge, EmptyState } from '../components/common';
-import toast from 'react-hot-toast';
 
 export default function PYQPage() {
   const [subjects, setSubjects] = useState([]);
-  const [pyqs, setPyqs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [examYear, setExamYear] = useState(new Date().getFullYear().toString());
-  const [examType, setExamType] = useState('endterm');
+  const [pyqs, setPyqs]         = useState([]);
+  const [loading, setLoading]   = useState(true);
   const [expandedPyq, setExpandedPyq] = useState(null);
   const [filterSubject, setFilterSubject] = useState('');
-  const fileRef = useRef();
 
   useEffect(() => {
     Promise.all([subjectService.getAll(), pyqService.getAll()])
@@ -23,188 +18,290 @@ export default function PYQPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleUpload = async () => {
-    if (!selectedSubject) return toast.error('Please select a subject');
-    setUploading(true);
-    const formData = new FormData();
-    formData.append('subjectId', selectedSubject);
-    formData.append('examYear', examYear);
-    formData.append('examType', examType);
-    if (fileRef.current?.files[0]) formData.append('pdf', fileRef.current.files[0]);
-    try {
-      const res = await pyqService.upload(formData);
-      setPyqs(prev => [res.data.pyq, ...prev]);
-      toast.success('PYQ uploaded and analyzed!');
-      setSelectedSubject('');
-      if (fileRef.current) fileRef.current.value = '';
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Upload failed');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const filtered = filterSubject ? pyqs.filter(p => p.subjectName === filterSubject) : pyqs;
+  const filtered = filterSubject
+    ? pyqs.filter(p => p.subjectName === filterSubject)
+    : pyqs;
 
   if (loading) return <LoadingSpinner text="Loading PYQs..." />;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="PYQ Analysis" subtitle="Upload and analyze previous year question papers" />
+      <PageHeader
+        title="PYQ History"
+        subtitle="All previously analyzed question papers"
+        action={
+          <Link
+            to="/chat"
+            className="btn-primary flex items-center gap-2 text-sm py-2.5 px-4"
+          >
+            <Bot size={16} /> Analyze New PYQ
+          </Link>
+        }
+      />
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Upload Card */}
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="card p-6">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-            <Upload size={18} className="text-primary-400" /> Upload PYQ
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text)' }}>Subject *</label>
-              <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)} className="input-field">
-                <option value="">Select subject...</option>
-                {subjects.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text)' }}>Year</label>
-                <select value={examYear} onChange={e => setExamYear(e.target.value)} className="input-field">
-                  {[2024, 2023, 2022, 2021, 2020].map(y => <option key={y}>{y}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text)' }}>Type</label>
-                <select value={examType} onChange={e => setExamType(e.target.value)} className="input-field">
-                  <option value="endterm">End Term</option>
-                  <option value="midterm">Mid Term</option>
-                  <option value="quiz">Quiz</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--color-text)' }}>PDF File (optional)</label>
-              <div className="border-2 border-dashed border-[var(--color-border)] rounded-xl p-4 text-center hover:border-primary-400 transition-colors cursor-pointer"
-                onClick={() => fileRef.current?.click()}>
-                <Upload size={20} className="mx-auto mb-2 text-primary-400" />
-                <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Click to upload PDF or drop here</p>
-                <input ref={fileRef} type="file" accept=".pdf" className="hidden" />
-              </div>
-            </div>
-            <button onClick={handleUpload} disabled={uploading || !selectedSubject} className="btn-primary w-full flex items-center justify-center gap-2">
-              {uploading ? <><Loader2 size={16} className="animate-spin" /> Analyzing...</> : <><Upload size={16} /> Upload & Analyze</>}
-            </button>
-          </div>
-        </motion.div>
+      {/* Info banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+        className="flex items-start gap-3 p-4 rounded-2xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(111,97,255,0.1), rgba(143,135,255,0.06))',
+          border: '1px solid rgba(111,97,255,0.25)'
+        }}
+      >
+        <MessageSquare size={18} className="text-primary-400 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+            Upload PYQs via AI Tutor
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            Go to <Link to="/chat" className="text-primary-400 hover:underline font-medium">AI Tutor</Link>,
+            click the 📎 paperclip, attach your PYQ PDF and ask it to analyze.
+            Results are saved here automatically.
+          </p>
+        </div>
+      </motion.div>
 
-        {/* PYQs List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-lg" style={{ color: 'var(--color-text)' }}>
-              All PYQs <span className="text-sm font-normal ml-2" style={{ color: 'var(--color-text-muted)' }}>({filtered.length})</span>
-            </h3>
-            <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)} className="input-field w-48 text-sm py-2">
-              <option value="">All Subjects</option>
-              {subjects.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
-            </select>
-          </div>
+      {/* Filter + count */}
+      <div className="flex items-center justify-between gap-4">
+        <h3 className="font-bold text-lg" style={{ color: 'var(--color-text)' }}>
+          Analyzed Papers
+          <span className="text-sm font-normal ml-2" style={{ color: 'var(--color-text-muted)' }}>
+            ({filtered.length})
+          </span>
+        </h3>
+        <select
+          value={filterSubject}
+          onChange={e => setFilterSubject(e.target.value)}
+          className="input-field w-48 text-sm py-2"
+        >
+          <option value="">All Subjects</option>
+          {subjects.map(s => (
+            <option key={s._id} value={s.name}>{s.name}</option>
+          ))}
+        </select>
+      </div>
 
-          {filtered.length === 0 ? (
-            <EmptyState icon={FileQuestion} title="No PYQs yet" description="Upload your first PYQ to get AI-powered topic analysis" />
-          ) : (
-            <div className="space-y-4">
-              {filtered.map((pyq, i) => (
-                <motion.div key={pyq._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }} className="card overflow-hidden">
-                  {/* Header */}
-                  <div className="p-4 flex items-start justify-between cursor-pointer"
-                    onClick={() => setExpandedPyq(expandedPyq === pyq._id ? null : pyq._id)}>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold" style={{ color: 'var(--color-text)' }}>{pyq.subjectName}</span>
-                        <span className="badge bg-primary-500/10 text-primary-400">{pyq.examYear}</span>
-                        <span className="badge" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
-                          {pyq.examType}
-                        </span>
-                      </div>
-                      <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                        {pyq.questions.length} questions extracted · {pyq.topicAnalysis.length} topics identified
-                      </p>
-                    </div>
-                    {expandedPyq === pyq._id ? <ChevronUp size={18} style={{ color: 'var(--color-text-muted)' }} /> : <ChevronDown size={18} style={{ color: 'var(--color-text-muted)' }} />}
+      {/* PYQ list */}
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={FileQuestion}
+          title="No PYQs analyzed yet"
+          description="Upload a PYQ PDF via the AI Tutor chat to get started"
+          action={
+            <Link to="/chat" className="btn-primary text-sm py-2.5 px-5 inline-flex items-center gap-2">
+              <Bot size={15} /> Go to AI Tutor
+            </Link>
+          }
+        />
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((pyq, i) => (
+            <motion.div
+              key={pyq._id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="card overflow-hidden"
+            >
+              {/* Header row */}
+              <div
+                className="p-4 flex items-start justify-between cursor-pointer hover:bg-[var(--color-surface-2)] transition-colors"
+                onClick={() => setExpandedPyq(expandedPyq === pyq._id ? null : pyq._id)}
+              >
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold" style={{ color: 'var(--color-text)' }}>
+                      {pyq.subjectName}
+                    </span>
+                    <span className="badge bg-primary-500/10 text-primary-400">
+                      {pyq.examYear}
+                    </span>
+                    <span className="badge" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+                      {pyq.examType}
+                    </span>
+                    {pyq.fileName && (
+                      <span className="badge text-xs" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+                        📎 {pyq.fileName}
+                      </span>
+                    )}
                   </div>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                    {pyq.questions?.length || 0} questions · {pyq.topicAnalysis?.length || 0} topics identified
+                    · {new Date(pyq.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                {expandedPyq === pyq._id
+                  ? <ChevronUp size={18} style={{ color: 'var(--color-text-muted)' }} />
+                  : <ChevronDown size={18} style={{ color: 'var(--color-text-muted)' }} />
+                }
+              </div>
 
-                  <AnimatePresence>
-                    {expandedPyq === pyq._id && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-[var(--color-border)]">
-                        <div className="p-4 space-y-4">
-                          {/* Topic Analysis */}
-                          <div>
-                            <h4 className="font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-                              <BarChart2 size={14} className="text-primary-400" /> Topic Analysis
-                            </h4>
-                            <div className="space-y-2">
-                              {pyq.topicAnalysis.map(ta => (
-                                <div key={ta.topic} className="flex items-center gap-3 p-2.5 rounded-xl"
-                                  style={{ background: 'var(--color-surface-2)' }}>
-                                  <div className="flex-1">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>{ta.topic}</span>
-                                      <div className="flex items-center gap-2">
-                                        <TrendBadge trend={ta.trend} />
-                                        <span className="text-xs font-bold text-amber-400">{ta.importanceScore}</span>
-                                      </div>
-                                    </div>
+              {/* Expanded content */}
+              <AnimatePresence>
+                {expandedPyq === pyq._id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden border-t border-[var(--color-border)]"
+                  >
+                    <div className="p-4 space-y-5">
+
+                      {/* Topic Analysis */}
+                      {pyq.topicAnalysis?.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2"
+                            style={{ color: 'var(--color-text)' }}>
+                            <BarChart2 size={14} className="text-primary-400" /> Topic Analysis
+                          </h4>
+                          <div className="space-y-2">
+                            {pyq.topicAnalysis.map((ta, ti) => (
+                              <div key={ti} className="flex items-center gap-3 p-2.5 rounded-xl"
+                                style={{ background: 'var(--color-surface-2)' }}>
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                                      {ta.topic}
+                                    </span>
                                     <div className="flex items-center gap-2">
-                                      <div className="flex-1 h-1.5 rounded-full" style={{ background: 'var(--color-border)' }}>
-                                        <div className="h-1.5 rounded-full bg-primary-400"
-                                          style={{ width: `${ta.importanceScore}%` }} />
-                                      </div>
-                                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{ta.count}q</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Questions */}
-                          <div>
-                            <h4 className="font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-                              <FileQuestion size={14} className="text-primary-400" /> Extracted Questions
-                            </h4>
-                            <div className="space-y-2 max-h-64 overflow-y-auto">
-                              {pyq.questions.map((q, qi) => (
-                                <div key={qi} className="p-3 rounded-xl text-sm"
-                                  style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)' }}>
-                                  <div className="flex items-start gap-2">
-                                    <span className="font-bold text-primary-400 flex-shrink-0">Q{qi + 1}.</span>
-                                    <div>
-                                      <p>{q.text}</p>
-                                      <div className="flex items-center gap-3 mt-1.5">
-                                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Topic: {q.topic}</span>
-                                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{q.marks} marks</span>
-                                        <span className={`text-xs badge ${q.difficulty === 'hard' ? 'bg-red-500/10 text-red-400' : q.difficulty === 'easy' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'}`}>
-                                          {q.difficulty}
+                                      {ta.importanceLevel && (
+                                        <span className="badge text-xs"
+                                          style={{
+                                            background: ta.importanceLevel === 'Very Important' ? '#ef444420'
+                                              : ta.importanceLevel === 'Important' ? '#f59e0b20' : '#6b728020',
+                                            color: ta.importanceLevel === 'Very Important' ? '#ef4444'
+                                              : ta.importanceLevel === 'Important' ? '#f59e0b' : '#6b7280'
+                                          }}>
+                                          {ta.importanceLevel}
                                         </span>
-                                      </div>
+                                      )}
+                                      <TrendBadge trend={ta.trend || 'stable'} />
+                                      <span className="text-xs font-bold text-amber-400">
+                                        {ta.importanceScore}
+                                      </span>
                                     </div>
                                   </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex-1 h-1.5 rounded-full"
+                                      style={{ background: 'var(--color-border)' }}>
+                                      <div className="h-1.5 rounded-full bg-primary-400"
+                                        style={{ width: `${ta.importanceScore}%` }} />
+                                    </div>
+                                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                                      {ta.count}q
+                                    </span>
+                                  </div>
+                                  {ta.likelyComing && (
+                                    <p className="text-xs text-emerald-400 mt-1">
+                                      ✓ Likely in next exam — {ta.reason}
+                                    </p>
+                                  )}
                                 </div>
-                              ))}
-                            </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              ))}
-            </div>
-          )}
+                      )}
+
+                      {/* Repeated Questions */}
+                      {pyq.repeatedQuestions?.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2 text-red-400">
+                            🔁 Repeated Questions — High Chance
+                          </h4>
+                          <div className="space-y-2">
+                            {pyq.repeatedQuestions.map((rq, ri) => (
+                              <div key={ri} className="p-3 rounded-xl"
+                                style={{ background: '#ef444410', border: '1px solid #ef444430' }}>
+                                <p className="text-sm" style={{ color: 'var(--color-text)' }}>{rq.text}</p>
+                                <div className="flex items-center gap-3 mt-1.5">
+                                  <span className="text-xs text-red-400">
+                                    Appeared in: {rq.appearedIn?.join(', ')}
+                                  </span>
+                                  <span className="text-xs text-red-400 font-bold">
+                                    {rq.certaintyScore}% certainty
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Extracted Questions */}
+                      {pyq.questions?.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2"
+                            style={{ color: 'var(--color-text)' }}>
+                            <FileQuestion size={14} className="text-primary-400" /> Extracted Questions
+                          </h4>
+                          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            {pyq.questions.map((q, qi) => (
+                              <div key={qi} className="p-3 rounded-xl text-sm"
+                                style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)' }}>
+                                <div className="flex items-start gap-2">
+                                  <span className="font-bold text-primary-400 flex-shrink-0">Q{qi + 1}.</span>
+                                  <div>
+                                    <p>{q.text}</p>
+                                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                      {q.topic && (
+                                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                                          Topic: {q.topic}
+                                        </span>
+                                      )}
+                                      {q.marks && (
+                                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                                          {q.marks} marks
+                                        </span>
+                                      )}
+                                      {q.difficulty && (
+                                        <span className={`text-xs badge ${
+                                          q.difficulty === 'hard' ? 'bg-red-500/10 text-red-400'
+                                          : q.difficulty === 'easy' ? 'bg-green-500/10 text-green-400'
+                                          : 'bg-amber-500/10 text-amber-400'
+                                        }`}>
+                                          {q.difficulty}
+                                        </span>
+                                      )}
+                                      {q.isRepeated && (
+                                        <span className="text-xs badge bg-red-500/10 text-red-400">
+                                          🔁 Repeated
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Predicted Topics */}
+                      {pyq.predictedTopics?.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-sm mb-2 text-emerald-400">
+                            🎯 Predicted for Next Exam
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {pyq.predictedTopics.map((t, ti) => (
+                              <span key={ti} className="badge text-xs px-3 py-1.5"
+                                style={{ background: '#10b98120', color: '#10b981', border: '1px solid #10b98130' }}>
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
