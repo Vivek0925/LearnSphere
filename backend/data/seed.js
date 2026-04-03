@@ -3,170 +3,398 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const Subject = require('../models/Subject');
-const Note = require('../models/Note');
-const Video = require('../models/Video');
+
 
 const subjects = [
-  {
-    name: 'Data Structures',
-    code: 'DS',
-    description: 'Study of organizing and storing data efficiently',
-    icon: '🌳',
-    color: '#6366f1',
-    difficulty: 'medium',
-    topics: [
-      { name: 'Arrays & Linked Lists', importanceScore: 75, trend: 'stable', pyqCount: 8, tags: ['arrays', 'pointers'] },
-      { name: 'Trees', importanceScore: 90, trend: 'rising', pyqCount: 12, tags: ['binary tree', 'BST', 'AVL'] },
-      { name: 'Graph', importanceScore: 85, trend: 'rising', pyqCount: 10, tags: ['BFS', 'DFS', 'shortest path'] },
-      { name: 'Hashing', importanceScore: 80, trend: 'stable', pyqCount: 9, tags: ['hash table', 'collision'] },
-      { name: 'Dynamic Programming', importanceScore: 95, trend: 'rising', pyqCount: 14, tags: ['memoization', 'tabulation'] },
-      { name: 'Stacks & Queues', importanceScore: 70, trend: 'stable', pyqCount: 7, tags: ['LIFO', 'FIFO'] }
-    ]
-  },
-  {
-    name: 'Algorithms',
-    code: 'ALGO',
-    description: 'Design and analysis of computational algorithms',
-    icon: '⚡',
-    color: '#f59e0b',
-    difficulty: 'hard',
-    topics: [
-      { name: 'Sorting', importanceScore: 88, trend: 'stable', pyqCount: 11, tags: ['quicksort', 'mergesort', 'heapsort'] },
-      { name: 'Graph Algorithms', importanceScore: 92, trend: 'rising', pyqCount: 13, tags: ['Dijkstra', 'Bellman-Ford', 'Floyd'] },
-      { name: 'Divide & Conquer', importanceScore: 78, trend: 'stable', pyqCount: 8, tags: ['recursion', 'merge sort'] },
-      { name: 'Greedy Algorithms', importanceScore: 82, trend: 'stable', pyqCount: 9, tags: ['Kruskal', 'Prim'] },
-      { name: 'NP Problems', importanceScore: 70, trend: 'declining', pyqCount: 6, tags: ['NP-hard', 'reduction'] }
-    ]
-  },
-  {
-    name: 'Operating Systems',
-    code: 'OS',
-    description: 'Fundamentals of operating system design and implementation',
-    icon: '💻',
-    color: '#10b981',
-    difficulty: 'hard',
-    topics: [
-      { name: 'CPU Scheduling', importanceScore: 90, trend: 'stable', pyqCount: 12, tags: ['FCFS', 'SJF', 'Round Robin'] },
-      { name: 'Deadlock', importanceScore: 88, trend: 'rising', pyqCount: 11, tags: ['prevention', 'detection', 'avoidance'] },
-      { name: 'Memory Management', importanceScore: 85, trend: 'stable', pyqCount: 10, tags: ['paging', 'segmentation', 'virtual memory'] },
-      { name: 'File Systems', importanceScore: 72, trend: 'stable', pyqCount: 7, tags: ['FAT', 'inode', 'disk scheduling'] },
-      { name: 'Synchronization', importanceScore: 80, trend: 'rising', pyqCount: 9, tags: ['mutex', 'semaphore', 'monitor'] }
-    ]
-  },
-  {
-    name: 'DBMS',
-    code: 'DBMS',
-    description: 'Database Management Systems principles and design',
-    icon: '🗄️',
-    color: '#3b82f6',
-    difficulty: 'medium',
-    topics: [
-      { name: 'ER Model', importanceScore: 80, trend: 'stable', pyqCount: 9, tags: ['entity', 'relationship', 'cardinality'] },
-      { name: 'Normalization', importanceScore: 92, trend: 'rising', pyqCount: 13, tags: ['1NF', '2NF', '3NF', 'BCNF'] },
-      { name: 'SQL', importanceScore: 95, trend: 'rising', pyqCount: 15, tags: ['joins', 'subqueries', 'aggregation'] },
-      { name: 'Transactions', importanceScore: 85, trend: 'stable', pyqCount: 10, tags: ['ACID', 'concurrency', 'locking'] },
-      { name: 'Indexing', importanceScore: 78, trend: 'stable', pyqCount: 8, tags: ['B-tree', 'hash index'] }
-    ]
-  },
-  {
-    name: 'Computer Networks',
-    code: 'CN',
-    description: 'Data communication and computer networking fundamentals',
-    icon: '🌐',
-    color: '#ec4899',
-    difficulty: 'medium',
-    topics: [
-      { name: 'OSI Model', importanceScore: 90, trend: 'stable', pyqCount: 12, tags: ['layers', 'protocols'] },
-      { name: 'TCP/IP', importanceScore: 92, trend: 'rising', pyqCount: 13, tags: ['TCP', 'UDP', 'IP'] },
-      { name: 'IP Addressing', importanceScore: 85, trend: 'stable', pyqCount: 10, tags: ['subnetting', 'IPv4', 'IPv6'] },
-      { name: 'Routing', importanceScore: 78, trend: 'stable', pyqCount: 8, tags: ['RIP', 'OSPF', 'BGP'] },
-      { name: 'Application Layer', importanceScore: 75, trend: 'rising', pyqCount: 7, tags: ['HTTP', 'FTP', 'DNS'] }
-    ]
-  },
-  {
-    name: 'Software Engineering',
-    code: 'SE',
-    description: 'Software development methodologies and best practices',
-    icon: '🔧',
-    color: '#8b5cf6',
-    difficulty: 'easy',
-    topics: [
-      { name: 'SDLC Models', importanceScore: 85, trend: 'stable', pyqCount: 10, tags: ['waterfall', 'agile', 'spiral'] },
-      { name: 'Testing', importanceScore: 88, trend: 'rising', pyqCount: 11, tags: ['unit', 'integration', 'black-box'] },
-      { name: 'UML', importanceScore: 80, trend: 'stable', pyqCount: 9, tags: ['class diagram', 'sequence', 'use case'] },
-      { name: 'Design Patterns', importanceScore: 78, trend: 'rising', pyqCount: 8, tags: ['singleton', 'observer', 'factory'] },
-      { name: 'Project Management', importanceScore: 70, trend: 'stable', pyqCount: 6, tags: ['estimation', 'scheduling', 'risk'] }
-    ]
-  }
-];
 
-const notes = [
+  // ─── SEM 3 ───────────────────────────────────────────────
   {
-    subjectName: 'Data Structures',
-    topic: 'Trees',
-    title: 'Binary Search Trees - Complete Guide',
-    content: 'A Binary Search Tree (BST) is a tree data structure where each node has at most two children, referred to as the left and right child. For every node, all nodes in the left subtree have values less than the node, and all nodes in the right subtree have values greater. Operations: Search O(h), Insert O(h), Delete O(h) where h is height. Balanced BST: O(log n) height.',
-    keyPoints: ['Left child < Parent < Right child', 'In-order traversal gives sorted output', 'AVL trees maintain balance with rotations', 'Red-Black trees used in Java TreeMap'],
-    formulas: ['Height of balanced BST: O(log n)', 'Height of skewed BST: O(n)', 'Max nodes at level i: 2^i'],
-    difficulty: 'medium',
-    tags: ['BST', 'trees', 'data structures'],
-    readTime: 8
+    name: 'Principles of Programming Languages', code: 'PPL',
+    semester: 3, branch: 'CSE',
+    description: 'Study of programming language concepts, paradigms and design principles',
+    icon: '🔤', color: '#6366f1', difficulty: 'medium',
+    topics: [
+      { name: 'Language Paradigms', importanceScore: 85, trend: 'stable', tags: ['OOP', 'functional', 'logic'] },
+      { name: 'Syntax & Semantics', importanceScore: 80, trend: 'stable', tags: ['BNF', 'grammar', 'parsing'] },
+      { name: 'Scope & Binding', importanceScore: 78, trend: 'stable', tags: ['static', 'dynamic', 'scope'] },
+      { name: 'Type Systems', importanceScore: 82, trend: 'rising', tags: ['static typing', 'dynamic typing'] },
+      { name: 'Runtime Storage', importanceScore: 75, trend: 'stable', tags: ['stack', 'heap', 'activation record'] },
+    ]
   },
   {
-    subjectName: 'Data Structures',
-    topic: 'Dynamic Programming',
-    title: 'Dynamic Programming - Master Guide',
-    content: 'Dynamic Programming solves complex problems by breaking them into overlapping subproblems and storing results to avoid recomputation. Two approaches: Top-down (Memoization) uses recursion + cache. Bottom-up (Tabulation) fills table iteratively. Key: Optimal substructure + Overlapping subproblems.',
-    keyPoints: ['Identify overlapping subproblems', 'Define state clearly', 'Write recurrence relation', 'Implement memoization or tabulation', 'Classic: LCS, LIS, Knapsack, Edit Distance'],
-    formulas: ['Fibonacci: dp[n] = dp[n-1] + dp[n-2]', 'Knapsack: dp[i][w] = max(dp[i-1][w], val[i] + dp[i-1][w-wt[i]])'],
-    difficulty: 'hard',
-    tags: ['DP', 'optimization', 'recursion'],
-    readTime: 12
+    name: 'Operating Systems', code: 'OS',
+    semester: 3, branch: 'CSE',
+    description: 'Fundamentals of operating system design and implementation',
+    icon: '💻', color: '#10b981', difficulty: 'hard',
+    topics: [
+      { name: 'CPU Scheduling', importanceScore: 90, trend: 'stable', tags: ['FCFS', 'SJF', 'Round Robin'] },
+      { name: 'Deadlock', importanceScore: 88, trend: 'rising', tags: ['prevention', 'detection', 'avoidance'] },
+      { name: 'Memory Management', importanceScore: 85, trend: 'stable', tags: ['paging', 'segmentation', 'virtual memory'] },
+      { name: 'File Systems', importanceScore: 72, trend: 'stable', tags: ['FAT', 'inode', 'disk scheduling'] },
+      { name: 'Synchronization', importanceScore: 80, trend: 'rising', tags: ['mutex', 'semaphore', 'monitor'] },
+    ]
   },
   {
-    subjectName: 'Operating Systems',
-    topic: 'Deadlock',
-    title: 'Deadlock - Detection and Prevention',
-    content: 'A deadlock is a situation where a set of processes are blocked, each waiting for a resource held by another process in the set. Four necessary conditions must hold simultaneously: Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait. Strategies: Prevention (deny a condition), Avoidance (Banker\'s algorithm), Detection and Recovery.',
-    keyPoints: ['All 4 conditions must hold for deadlock', 'Banker\'s Algorithm for avoidance', 'Resource Allocation Graph for detection', 'Recovery: kill process or preempt resource'],
-    formulas: ['Safe state condition: need[i] ≤ available for some process', 'Deadlock detection: check for cycle in RAG'],
-    difficulty: 'medium',
-    tags: ['deadlock', 'OS', 'synchronization'],
-    readTime: 10
+    name: 'Mathematics III', code: 'M3',
+    semester: 3, branch: 'CSE',
+    description: 'Engineering mathematics covering transforms, complex analysis and statistics',
+    icon: '📐', color: '#f59e0b', difficulty: 'hard',
+    topics: [
+      { name: 'Laplace Transform', importanceScore: 90, trend: 'stable', tags: ['inverse', 'properties', 'applications'] },
+      { name: 'Fourier Series', importanceScore: 85, trend: 'stable', tags: ['half-range', 'Parsevals theorem'] },
+      { name: 'Complex Analysis', importanceScore: 80, trend: 'stable', tags: ['Cauchy', 'residues', 'contour'] },
+      { name: 'Z-Transform', importanceScore: 78, trend: 'stable', tags: ['inverse Z', 'difference equations'] },
+      { name: 'Probability & Statistics', importanceScore: 82, trend: 'rising', tags: ['distributions', 'testing'] },
+    ]
   },
   {
-    subjectName: 'DBMS',
-    topic: 'Normalization',
-    title: 'Database Normalization - 1NF to BCNF',
-    content: 'Normalization is the process of organizing a database to reduce redundancy and improve data integrity. 1NF: Atomic values, no repeating groups. 2NF: No partial dependencies (non-key attributes depend on full primary key). 3NF: No transitive dependencies. BCNF: Every determinant is a candidate key.',
-    keyPoints: ['1NF: Atomic values only', '2NF: Remove partial dependencies', '3NF: Remove transitive dependencies', 'BCNF: Stricter than 3NF', 'Denormalization for performance'],
-    formulas: ['Functional Dependency: X → Y', 'Armstrong\'s Axioms: Reflexivity, Augmentation, Transitivity'],
-    difficulty: 'hard',
-    tags: ['normalization', 'DBMS', 'SQL'],
-    readTime: 15
+    name: 'Digital Electronics & Logic Design', code: 'DELD',
+    semester: 3, branch: 'CSE',
+    description: 'Boolean algebra, logic gates, combinational and sequential circuits',
+    icon: '⚡', color: '#ec4899', difficulty: 'medium',
+    topics: [
+      { name: 'Boolean Algebra', importanceScore: 85, trend: 'stable', tags: ['K-map', 'minimization', 'SOP'] },
+      { name: 'Combinational Circuits', importanceScore: 88, trend: 'stable', tags: ['adder', 'MUX', 'decoder'] },
+      { name: 'Sequential Circuits', importanceScore: 90, trend: 'rising', tags: ['flip-flops', 'counters', 'registers'] },
+      { name: 'Logic Families', importanceScore: 70, trend: 'stable', tags: ['TTL', 'CMOS', 'ECL'] },
+      { name: 'Memory & PLDs', importanceScore: 75, trend: 'stable', tags: ['ROM', 'RAM', 'PLA', 'FPGA'] },
+    ]
   },
   {
-    subjectName: 'Computer Networks',
-    topic: 'OSI Model',
-    title: 'OSI Model - All 7 Layers Explained',
-    content: 'The OSI model is a conceptual framework for understanding network communication. Layer 7 (Application): HTTP, FTP, SMTP. Layer 6 (Presentation): Encryption, compression. Layer 5 (Session): Session management. Layer 4 (Transport): TCP, UDP, port numbers. Layer 3 (Network): IP routing. Layer 2 (Data Link): MAC addresses, frames. Layer 1 (Physical): Bits, cables.',
-    keyPoints: ['Mnemonic: All People Seem To Need Data Processing', 'Each layer serves the layer above', 'TCP/IP has 4 layers (condensed)', 'PDU names: bit, frame, packet, segment, data'],
-    formulas: [],
-    difficulty: 'easy',
-    tags: ['OSI', 'networking', 'protocols'],
-    readTime: 8
+    name: 'Data Structures & Algorithms', code: 'DSA',
+    semester: 3, branch: 'CSE',
+    description: 'Core data structures and algorithm design techniques',
+    icon: '🌳', color: '#8b5cf6', difficulty: 'hard',
+    topics: [
+      { name: 'Arrays & Linked Lists', importanceScore: 75, trend: 'stable', tags: ['arrays', 'pointers'] },
+      { name: 'Trees & BST', importanceScore: 90, trend: 'rising', tags: ['binary tree', 'BST', 'AVL'] },
+      { name: 'Graph Algorithms', importanceScore: 88, trend: 'rising', tags: ['BFS', 'DFS', 'shortest path'] },
+      { name: 'Hashing', importanceScore: 80, trend: 'stable', tags: ['hash table', 'collision'] },
+      { name: 'Dynamic Programming', importanceScore: 95, trend: 'rising', tags: ['memoization', 'tabulation'] },
+    ]
+  },
+
+  // ─── SEM 4 ───────────────────────────────────────────────
+  {
+    name: 'Computer System Architecture', code: 'CSA',
+    semester: 4, branch: 'CSE',
+    description: 'Computer organization, instruction sets, pipelining and memory hierarchy',
+    icon: '🖥️', color: '#3b82f6', difficulty: 'hard',
+    topics: [
+      { name: 'Instruction Set Architecture', importanceScore: 88, trend: 'stable', tags: ['RISC', 'CISC', 'ISA'] },
+      { name: 'Pipelining', importanceScore: 90, trend: 'rising', tags: ['hazards', 'stalls', 'forwarding'] },
+      { name: 'Memory Hierarchy', importanceScore: 85, trend: 'stable', tags: ['cache', 'virtual memory', 'TLB'] },
+      { name: 'I/O Organization', importanceScore: 72, trend: 'stable', tags: ['DMA', 'interrupts', 'buses'] },
+      { name: 'Parallel Processing', importanceScore: 78, trend: 'rising', tags: ['Flynn taxonomy', 'multicore'] },
+    ]
   },
   {
-    subjectName: 'Algorithms',
-    topic: 'Sorting',
-    title: 'Sorting Algorithms - Time & Space Complexity',
-    content: 'Sorting algorithms arrange elements in a specific order. Bubble Sort: O(n²) - simple, stable. Selection Sort: O(n²) - not stable. Insertion Sort: O(n²) worst, O(n) best - stable, good for nearly sorted data. Merge Sort: O(n log n) - stable, uses O(n) space. Quick Sort: O(n log n) avg - not stable, in-place. Heap Sort: O(n log n) - not stable, in-place.',
-    keyPoints: ['Merge Sort: best for linked lists', 'Quick Sort: best for arrays in practice', 'Counting Sort: O(n+k) for small integer ranges', 'Stability matters when sorting objects by multiple keys'],
-    formulas: ['Merge Sort: T(n) = 2T(n/2) + O(n) = O(n log n)', 'Quick Sort: T(n) = T(k) + T(n-k-1) + O(n)'],
-    difficulty: 'medium',
-    tags: ['sorting', 'algorithms', 'complexity'],
-    readTime: 10
-  }
+    name: 'Design & Analysis of Algorithms', code: 'DAA',
+    semester: 4, branch: 'CSE',
+    description: 'Algorithm design paradigms, complexity analysis and NP theory',
+    icon: '⚡', color: '#f59e0b', difficulty: 'hard',
+    topics: [
+      { name: 'Asymptotic Analysis', importanceScore: 90, trend: 'stable', tags: ['Big-O', 'theta', 'omega'] },
+      { name: 'Divide & Conquer', importanceScore: 85, trend: 'stable', tags: ['merge sort', 'quick sort', 'binary search'] },
+      { name: 'Greedy Algorithms', importanceScore: 82, trend: 'stable', tags: ['Kruskal', 'Prim', 'Huffman'] },
+      { name: 'Dynamic Programming', importanceScore: 92, trend: 'rising', tags: ['LCS', 'knapsack', 'matrix chain'] },
+      { name: 'NP Completeness', importanceScore: 78, trend: 'stable', tags: ['P vs NP', 'reduction', 'NP-hard'] },
+    ]
+  },
+  {
+    name: 'Database Management Systems', code: 'DBMS',
+    semester: 4, branch: 'CSE',
+    description: 'Database design, SQL, transactions and query optimization',
+    icon: '🗄️', color: '#6366f1', difficulty: 'medium',
+    topics: [
+      { name: 'ER Model', importanceScore: 80, trend: 'stable', tags: ['entity', 'relationship', 'cardinality'] },
+      { name: 'Normalization', importanceScore: 92, trend: 'rising', tags: ['1NF', '2NF', '3NF', 'BCNF'] },
+      { name: 'SQL', importanceScore: 95, trend: 'rising', tags: ['joins', 'subqueries', 'aggregation'] },
+      { name: 'Transactions & ACID', importanceScore: 85, trend: 'stable', tags: ['concurrency', 'locking', 'MVCC'] },
+      { name: 'Indexing & Hashing', importanceScore: 78, trend: 'stable', tags: ['B-tree', 'hash index', 'query plan'] },
+    ]
+  },
+  {
+    name: 'Discrete Mathematics', code: 'DM',
+    semester: 4, branch: 'CSE',
+    description: 'Mathematical foundations of computer science — logic, sets, graphs and combinatorics',
+    icon: '∑', color: '#10b981', difficulty: 'medium',
+    topics: [
+      { name: 'Mathematical Logic', importanceScore: 85, trend: 'stable', tags: ['propositional', 'predicate', 'proofs'] },
+      { name: 'Set Theory & Relations', importanceScore: 80, trend: 'stable', tags: ['sets', 'functions', 'relations'] },
+      { name: 'Graph Theory', importanceScore: 88, trend: 'rising', tags: ['trees', 'Euler', 'Hamilton', 'coloring'] },
+      { name: 'Combinatorics', importanceScore: 82, trend: 'stable', tags: ['permutations', 'combinations', 'pigeonhole'] },
+      { name: 'Algebraic Structures', importanceScore: 75, trend: 'stable', tags: ['groups', 'rings', 'lattices'] },
+    ]
+  },
+  {
+    name: 'Java & OOP', code: 'JAVA',
+    semester: 4, branch: 'CSE',
+    description: 'Object-oriented programming with Java — classes, inheritance, collections and frameworks',
+    icon: '☕', color: '#ec4899', difficulty: 'medium',
+    topics: [
+      { name: 'OOP Concepts', importanceScore: 88, trend: 'stable', tags: ['encapsulation', 'inheritance', 'polymorphism'] },
+      { name: 'Exception Handling', importanceScore: 82, trend: 'stable', tags: ['try-catch', 'custom exceptions'] },
+      { name: 'Collections Framework', importanceScore: 85, trend: 'rising', tags: ['List', 'Map', 'Set', 'Iterator'] },
+      { name: 'Multithreading', importanceScore: 80, trend: 'rising', tags: ['threads', 'synchronization', 'executor'] },
+      { name: 'Java I/O & Streams', importanceScore: 75, trend: 'stable', tags: ['streams', 'lambda', 'file I/O'] },
+    ]
+  },
+
+  // ─── SEM 5 ───────────────────────────────────────────────
+  {
+    name: 'Computer Graphics', code: 'CG',
+    semester: 5, branch: 'CSE',
+    description: '2D/3D rendering, transformations, clipping and rasterization algorithms',
+    icon: '🎨', color: '#8b5cf6', difficulty: 'medium',
+    topics: [
+      { name: 'Rasterization Algorithms', importanceScore: 85, trend: 'stable', tags: ['Bresenham', 'DDA', 'scan fill'] },
+      { name: '2D Transformations', importanceScore: 88, trend: 'stable', tags: ['translation', 'rotation', 'scaling'] },
+      { name: '3D Transformations', importanceScore: 82, trend: 'rising', tags: ['projection', 'viewing pipeline'] },
+      { name: 'Clipping', importanceScore: 78, trend: 'stable', tags: ['Cohen-Sutherland', 'Cyrus-Beck'] },
+      { name: 'Curves & Surfaces', importanceScore: 75, trend: 'stable', tags: ['Bezier', 'B-spline', 'NURBS'] },
+    ]
+  },
+  {
+    name: 'Computer Networks', code: 'CN',
+    semester: 5, branch: 'CSE',
+    description: 'Network protocols, OSI/TCP-IP model, routing and application layer',
+    icon: '🌐', color: '#3b82f6', difficulty: 'medium',
+    topics: [
+      { name: 'OSI & TCP/IP Model', importanceScore: 90, trend: 'stable', tags: ['layers', 'protocols', 'encapsulation'] },
+      { name: 'IP Addressing & Subnetting', importanceScore: 88, trend: 'stable', tags: ['IPv4', 'IPv6', 'CIDR'] },
+      { name: 'Routing Protocols', importanceScore: 82, trend: 'stable', tags: ['RIP', 'OSPF', 'BGP'] },
+      { name: 'Transport Layer', importanceScore: 85, trend: 'rising', tags: ['TCP', 'UDP', 'congestion control'] },
+      { name: 'Application Layer', importanceScore: 78, trend: 'rising', tags: ['HTTP', 'DNS', 'FTP', 'SMTP'] },
+    ]
+  },
+  {
+    name: 'Data Analytics with Python', code: 'DAP',
+    semester: 5, branch: 'CSE',
+    description: 'Python for data analysis — NumPy, Pandas, visualization and statistics',
+    icon: '🐍', color: '#10b981', difficulty: 'easy',
+    topics: [
+      { name: 'Python Fundamentals', importanceScore: 80, trend: 'stable', tags: ['lists', 'dicts', 'comprehensions'] },
+      { name: 'NumPy & Pandas', importanceScore: 90, trend: 'rising', tags: ['DataFrame', 'arrays', 'operations'] },
+      { name: 'Data Visualization', importanceScore: 85, trend: 'rising', tags: ['Matplotlib', 'Seaborn', 'Plotly'] },
+      { name: 'Statistical Analysis', importanceScore: 82, trend: 'stable', tags: ['hypothesis testing', 'regression'] },
+      { name: 'Data Cleaning', importanceScore: 78, trend: 'stable', tags: ['missing values', 'outliers', 'encoding'] },
+    ]
+  },
+  {
+    name: 'Formal Languages & Automata Theory', code: 'FLAT',
+    semester: 5, branch: 'CSE',
+    description: 'Automata, formal grammars, Turing machines and computability',
+    icon: '🤖', color: '#f59e0b', difficulty: 'hard',
+    topics: [
+      { name: 'Finite Automata', importanceScore: 88, trend: 'stable', tags: ['DFA', 'NFA', 'epsilon-NFA'] },
+      { name: 'Regular Languages', importanceScore: 85, trend: 'stable', tags: ['regex', 'pumping lemma', 'closure'] },
+      { name: 'Context Free Grammars', importanceScore: 90, trend: 'rising', tags: ['CFG', 'parse tree', 'ambiguity'] },
+      { name: 'Pushdown Automata', importanceScore: 82, trend: 'stable', tags: ['PDA', 'CFL', 'NPDA'] },
+      { name: 'Turing Machines', importanceScore: 85, trend: 'stable', tags: ['decidability', 'halting problem', 'complexity'] },
+    ]
+  },
+  {
+    name: 'Microprocessor & Interfacing', code: 'MP',
+    semester: 5, branch: 'CSE',
+    description: '8085/8086 architecture, assembly programming and peripheral interfacing',
+    icon: '🔧', color: '#ec4899', difficulty: 'hard',
+    topics: [
+      { name: '8085 Architecture', importanceScore: 85, trend: 'stable', tags: ['registers', 'ALU', 'bus structure'] },
+      { name: '8086 Architecture', importanceScore: 88, trend: 'stable', tags: ['segmentation', 'addressing modes'] },
+      { name: 'Assembly Programming', importanceScore: 90, trend: 'stable', tags: ['instructions', 'interrupts', 'programs'] },
+      { name: 'Memory Interfacing', importanceScore: 78, trend: 'stable', tags: ['RAM', 'ROM', 'address decoding'] },
+      { name: 'I/O Interfacing', importanceScore: 80, trend: 'stable', tags: ['8255', '8253', 'ADC', 'DAC'] },
+    ]
+  },
+
+  // ─── SEM 6 ───────────────────────────────────────────────
+  {
+    name: 'AI & Expert Systems', code: 'AIES',
+    semester: 6, branch: 'CSE',
+    description: 'Artificial intelligence fundamentals, search, knowledge representation and expert systems',
+    icon: '🧠', color: '#6366f1', difficulty: 'hard',
+    topics: [
+      { name: 'Search Algorithms', importanceScore: 88, trend: 'stable', tags: ['BFS', 'DFS', 'A*', 'heuristics'] },
+      { name: 'Knowledge Representation', importanceScore: 85, trend: 'stable', tags: ['logic', 'semantic nets', 'frames'] },
+      { name: 'Expert Systems', importanceScore: 80, trend: 'stable', tags: ['inference engine', 'rule base', 'MYCIN'] },
+      { name: 'Planning & Uncertainty', importanceScore: 78, trend: 'rising', tags: ['STRIPS', 'Bayesian', 'fuzzy logic'] },
+      { name: 'Natural Language Processing Basics', importanceScore: 82, trend: 'rising', tags: ['parsing', 'semantics'] },
+    ]
+  },
+  {
+    name: 'Cryptography & Network Security', code: 'CNS',
+    semester: 6, branch: 'CSE',
+    description: 'Encryption algorithms, PKI, network attacks and security protocols',
+    icon: '🔐', color: '#ec4899', difficulty: 'hard',
+    topics: [
+      { name: 'Symmetric Cryptography', importanceScore: 90, trend: 'stable', tags: ['AES', 'DES', '3DES', 'modes'] },
+      { name: 'Asymmetric Cryptography', importanceScore: 88, trend: 'rising', tags: ['RSA', 'ECC', 'Diffie-Hellman'] },
+      { name: 'Hash Functions & Digital Signatures', importanceScore: 85, trend: 'stable', tags: ['SHA', 'MD5', 'PKI'] },
+      { name: 'Network Attacks & Defenses', importanceScore: 82, trend: 'rising', tags: ['DoS', 'MITM', 'firewalls', 'IDS'] },
+      { name: 'Security Protocols', importanceScore: 80, trend: 'rising', tags: ['SSL/TLS', 'IPSec', 'SSH', 'PGP'] },
+    ]
+  },
+  {
+    name: 'Compiler Design', code: 'CD',
+    semester: 6, branch: 'CSE',
+    description: 'Lexical analysis, parsing, semantic analysis, optimization and code generation',
+    icon: '⚙️', color: '#10b981', difficulty: 'hard',
+    topics: [
+      { name: 'Lexical Analysis', importanceScore: 85, trend: 'stable', tags: ['tokens', 'regex', 'LEX'] },
+      { name: 'Parsing Techniques', importanceScore: 90, trend: 'stable', tags: ['LL', 'LR', 'YACC', 'parse table'] },
+      { name: 'Semantic Analysis', importanceScore: 82, trend: 'stable', tags: ['type checking', 'symbol table', 'SDT'] },
+      { name: 'Intermediate Code Generation', importanceScore: 80, trend: 'stable', tags: ['TAC', 'quadruples', 'DAG'] },
+      { name: 'Code Optimization & Generation', importanceScore: 85, trend: 'rising', tags: ['peephole', 'register allocation'] },
+    ]
+  },
+  {
+    name: 'Internet of Things', code: 'IOT',
+    semester: 6, branch: 'CSE',
+    description: 'IoT architecture, sensors, protocols, cloud integration and smart systems',
+    icon: '📡', color: '#f59e0b', difficulty: 'medium',
+    topics: [
+      { name: 'IoT Architecture', importanceScore: 85, trend: 'rising', tags: ['layers', 'edge', 'fog', 'cloud'] },
+      { name: 'Sensors & Actuators', importanceScore: 80, trend: 'stable', tags: ['types', 'interfacing', 'Arduino'] },
+      { name: 'IoT Protocols', importanceScore: 88, trend: 'rising', tags: ['MQTT', 'CoAP', 'HTTP', 'Zigbee'] },
+      { name: 'IoT Security', importanceScore: 82, trend: 'rising', tags: ['authentication', 'encryption', 'threats'] },
+      { name: 'IoT Applications', importanceScore: 78, trend: 'rising', tags: ['smart home', 'healthcare', 'industrial'] },
+    ]
+  },
+  {
+    name: 'Software Engineering & Project Mgmt', code: 'SEPM',
+    semester: 6, branch: 'CSE',
+    description: 'SDLC models, agile, UML, testing strategies and project management',
+    icon: '📋', color: '#8b5cf6', difficulty: 'easy',
+    topics: [
+      { name: 'SDLC Models', importanceScore: 85, trend: 'stable', tags: ['waterfall', 'agile', 'spiral', 'scrum'] },
+      { name: 'Requirements Engineering', importanceScore: 80, trend: 'stable', tags: ['SRS', 'use cases', 'user stories'] },
+      { name: 'UML & Design', importanceScore: 82, trend: 'stable', tags: ['class diagram', 'sequence', 'ER'] },
+      { name: 'Software Testing', importanceScore: 88, trend: 'rising', tags: ['unit', 'integration', 'black-box', 'white-box'] },
+      { name: 'Project Management', importanceScore: 78, trend: 'stable', tags: ['estimation', 'scheduling', 'risk', 'COCOMO'] },
+    ]
+  },
+
+  // ─── SEM 7 ───────────────────────────────────────────────
+  {
+    name: 'Big Data & Hadoop', code: 'BDH',
+    semester: 7, branch: 'CSE',
+    description: 'Hadoop ecosystem, MapReduce, Spark and large-scale data processing',
+    icon: '🐘', color: '#f59e0b', difficulty: 'hard',
+    topics: [
+      { name: 'Hadoop Architecture', importanceScore: 88, trend: 'rising', tags: ['HDFS', 'NameNode', 'DataNode'] },
+      { name: 'MapReduce', importanceScore: 90, trend: 'stable', tags: ['mapper', 'reducer', 'combiner', 'partitioner'] },
+      { name: 'Apache Spark', importanceScore: 92, trend: 'rising', tags: ['RDD', 'DataFrame', 'Spark SQL', 'MLlib'] },
+      { name: 'Hive & Pig', importanceScore: 78, trend: 'stable', tags: ['HiveQL', 'Pig Latin', 'data warehouse'] },
+      { name: 'NoSQL Databases', importanceScore: 82, trend: 'rising', tags: ['MongoDB', 'Cassandra', 'HBase'] },
+    ]
+  },
+  {
+    name: 'Data Mining & Warehousing', code: 'DMW',
+    semester: 7, branch: 'CSE',
+    description: 'Data warehouse design, OLAP, mining techniques and pattern discovery',
+    icon: '⛏️', color: '#3b82f6', difficulty: 'medium',
+    topics: [
+      { name: 'Data Warehouse Architecture', importanceScore: 85, trend: 'stable', tags: ['star schema', 'snowflake', 'fact table'] },
+      { name: 'OLAP Operations', importanceScore: 82, trend: 'stable', tags: ['slice', 'dice', 'drill-down', 'roll-up'] },
+      { name: 'Classification', importanceScore: 90, trend: 'rising', tags: ['decision tree', 'naive Bayes', 'SVM', 'kNN'] },
+      { name: 'Clustering', importanceScore: 85, trend: 'rising', tags: ['k-means', 'hierarchical', 'DBSCAN'] },
+      { name: 'Association Rules', importanceScore: 80, trend: 'stable', tags: ['Apriori', 'FP-growth', 'support', 'confidence'] },
+    ]
+  },
+  {
+    name: 'Cyber Technology', code: 'CT',
+    semester: 7, branch: 'CSE',
+    description: 'Cybersecurity frameworks, ethical hacking, forensics and threat intelligence',
+    icon: '🛡️', color: '#ec4899', difficulty: 'medium',
+    topics: [
+      { name: 'Ethical Hacking', importanceScore: 88, trend: 'rising', tags: ['penetration testing', 'reconnaissance', 'exploitation'] },
+      { name: 'Vulnerability Assessment', importanceScore: 85, trend: 'rising', tags: ['OWASP', 'CVE', 'scanning tools'] },
+      { name: 'Digital Forensics', importanceScore: 80, trend: 'rising', tags: ['evidence collection', 'analysis', 'chain of custody'] },
+      { name: 'Malware Analysis', importanceScore: 82, trend: 'rising', tags: ['static analysis', 'dynamic analysis', 'reverse engineering'] },
+      { name: 'Security Frameworks', importanceScore: 78, trend: 'stable', tags: ['NIST', 'ISO 27001', 'SOC'] },
+    ]
+  },
+  {
+    name: 'Internet & Web Technologies', code: 'IWT',
+    semester: 7, branch: 'CSE',
+    description: 'Full stack web development — HTML/CSS, JavaScript, REST APIs and modern frameworks',
+    icon: '🌍', color: '#10b981', difficulty: 'easy',
+    topics: [
+      { name: 'HTML5 & CSS3', importanceScore: 80, trend: 'stable', tags: ['semantic HTML', 'flexbox', 'grid', 'responsive'] },
+      { name: 'JavaScript & DOM', importanceScore: 88, trend: 'rising', tags: ['ES6+', 'async/await', 'fetch', 'events'] },
+      { name: 'React / Frontend Frameworks', importanceScore: 90, trend: 'rising', tags: ['components', 'hooks', 'state', 'routing'] },
+      { name: 'REST APIs & Node.js', importanceScore: 85, trend: 'rising', tags: ['Express', 'REST', 'JWT', 'middleware'] },
+      { name: 'Databases & Deployment', importanceScore: 78, trend: 'rising', tags: ['MongoDB', 'SQL', 'Docker', 'cloud'] },
+    ]
+  },
+  {
+    name: 'Machine Learning', code: 'ML',
+    semester: 7, branch: 'CSE',
+    description: 'Supervised/unsupervised learning, model evaluation and scikit-learn',
+    icon: '🤖', color: '#6366f1', difficulty: 'hard',
+    topics: [
+      { name: 'Supervised Learning', importanceScore: 92, trend: 'rising', tags: ['regression', 'classification', 'SVM', 'decision trees'] },
+      { name: 'Unsupervised Learning', importanceScore: 85, trend: 'rising', tags: ['clustering', 'PCA', 'dimensionality reduction'] },
+      { name: 'Model Evaluation', importanceScore: 88, trend: 'stable', tags: ['cross-validation', 'ROC', 'precision', 'recall'] },
+      { name: 'Ensemble Methods', importanceScore: 82, trend: 'rising', tags: ['random forest', 'boosting', 'bagging'] },
+      { name: 'Feature Engineering', importanceScore: 80, trend: 'rising', tags: ['selection', 'extraction', 'normalization'] },
+    ]
+  },
+  {
+    name: 'Neural Networks & Deep Learning', code: 'NNDL',
+    semester: 7, branch: 'CSE',
+    description: 'Neural network architectures, backpropagation, CNNs, RNNs and transformers',
+    icon: '🧬', color: '#8b5cf6', difficulty: 'hard',
+    topics: [
+      { name: 'Neural Network Basics', importanceScore: 88, trend: 'rising', tags: ['perceptron', 'activation functions', 'backprop'] },
+      { name: 'CNN', importanceScore: 92, trend: 'rising', tags: ['convolution', 'pooling', 'ResNet', 'VGG'] },
+      { name: 'RNN & LSTM', importanceScore: 88, trend: 'rising', tags: ['sequence models', 'vanishing gradient', 'attention'] },
+      { name: 'Transformers', importanceScore: 90, trend: 'rising', tags: ['self-attention', 'BERT', 'GPT'] },
+      { name: 'Training & Optimization', importanceScore: 85, trend: 'stable', tags: ['Adam', 'dropout', 'batch norm', 'regularization'] },
+    ]
+  },
+
+  // ─── SEM 8 ───────────────────────────────────────────────
+  {
+    name: 'Cyber Law & Intellectual Property', code: 'CLIP',
+    semester: 8, branch: 'CSE',
+    description: 'IT Act, cybercrime, IPR, patents and digital rights management',
+    icon: '⚖️', color: '#f59e0b', difficulty: 'easy',
+    topics: [
+      { name: 'IT Act 2000 & Amendments', importanceScore: 88, trend: 'stable', tags: ['offences', 'penalties', 'sections'] },
+      { name: 'Cybercrime Types', importanceScore: 85, trend: 'rising', tags: ['hacking', 'identity theft', 'phishing'] },
+      { name: 'Intellectual Property Rights', importanceScore: 82, trend: 'stable', tags: ['copyright', 'trademark', 'patent'] },
+      { name: 'Digital Contracts & Evidence', importanceScore: 78, trend: 'stable', tags: ['e-contracts', 'digital signatures', 'admissibility'] },
+      { name: 'Privacy & Data Protection', importanceScore: 85, trend: 'rising', tags: ['GDPR', 'data localization', 'consent'] },
+    ]
+  },
+  {
+    name: 'Mobile & Cloud Computing', code: 'MCV',
+    semester: 8, branch: 'CSE',
+    description: 'Cloud service models, virtualization, mobile app development and deployment',
+    icon: '☁️', color: '#3b82f6', difficulty: 'medium',
+    topics: [
+      { name: 'Cloud Service Models', importanceScore: 90, trend: 'rising', tags: ['IaaS', 'PaaS', 'SaaS', 'serverless'] },
+      { name: 'Virtualization', importanceScore: 85, trend: 'stable', tags: ['hypervisor', 'containers', 'Docker', 'Kubernetes'] },
+      { name: 'Cloud Platforms', importanceScore: 88, trend: 'rising', tags: ['AWS', 'Azure', 'GCP', 'deployment'] },
+      { name: 'Mobile App Development', importanceScore: 82, trend: 'rising', tags: ['Android', 'React Native', 'Flutter'] },
+      { name: 'Mobile Security & APIs', importanceScore: 78, trend: 'rising', tags: ['OAuth', 'REST', 'mobile threats'] },
+    ]
+  },
+  {
+    name: 'Natural Language Processing', code: 'NLP',
+    semester: 8, branch: 'CSE',
+    description: 'Text processing, language models, sentiment analysis and transformers',
+    icon: '💬', color: '#ec4899', difficulty: 'hard',
+    topics: [
+      { name: 'Text Preprocessing', importanceScore: 85, trend: 'stable', tags: ['tokenization', 'stemming', 'lemmatization', 'stopwords'] },
+      { name: 'Language Models', importanceScore: 92, trend: 'rising', tags: ['n-gram', 'word2vec', 'BERT', 'GPT'] },
+      { name: 'Sentiment Analysis', importanceScore: 88, trend: 'rising', tags: ['classification', 'opinion mining', 'VADER'] },
+      { name: 'Named Entity Recognition', importanceScore: 82, trend: 'rising', tags: ['NER', 'POS tagging', 'chunking'] },
+      { name: 'Machine Translation', importanceScore: 80, trend: 'rising', tags: ['seq2seq', 'attention', 'transformer'] },
+    ]
+  },
 ];
 
 const videos = [
@@ -226,17 +454,11 @@ async function seed() {
     console.log('Connected to MongoDB');
 
     await Subject.deleteMany({});
-    await Note.deleteMany({});
-    await Video.deleteMany({});
 
     await Subject.insertMany(subjects);
-    await Note.insertMany(notes);
-    await Video.insertMany(videos);
 
     console.log('✅ Seed data inserted successfully!');
     console.log(`  - ${subjects.length} subjects`);
-    console.log(`  - ${notes.length} notes`);
-    console.log(`  - ${videos.length} videos`);
     process.exit(0);
   } catch (err) {
     console.error('Seed error:', err);

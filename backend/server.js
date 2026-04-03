@@ -41,4 +41,6 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
+  console.log("OPENROUTER KEY:", process.env.OPENROUTER_API_KEY);
+
 module.exports = app;
