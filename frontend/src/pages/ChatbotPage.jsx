@@ -8,6 +8,10 @@ import {
 import { chatbotService } from "../services";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker?url";
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
 
 function MessageContent({ text }) {
   const lines = text.split("\n");
@@ -78,6 +82,79 @@ const FREE_MODELS = [
   { id: "mistral-7b",     label: "Mistral 7B (Free)" },
   { id: "qwen-2.5-7b",    label: "Qwen 2.5 7B (Free)" },
 ];
+
+function PDFPreview({ file }) {
+  const canvasRef = React.useRef(null);
+
+  React.useEffect(() => {
+  let isMounted = true;
+
+  const renderPDF = async () => {
+    const fileReader = new FileReader();
+
+    fileReader.onload = async function () {
+      if (!isMounted) return;
+
+      try {
+        const typedArray = new Uint8Array(this.result);
+
+        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+        const page = await pdf.getPage(1);
+
+        const viewport = page.getViewport({ scale: 0.5 });
+
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const context = canvas.getContext("2d");
+
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({
+          canvasContext: context,
+          viewport,
+        }).promise;
+
+      } catch (err) {
+        console.error("PDF preview error:", err);
+
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+
+          // ✅ background fix
+          ctx.fillStyle = "#111";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.fillStyle = "#fff";
+          ctx.font = "12px Arial";
+          ctx.fillText("Preview not available", 10, 20);
+        }
+      }
+    };
+
+    fileReader.readAsArrayBuffer(file);
+  };
+
+  renderPDF();
+
+  // ✅ cleanup fix
+  return () => {
+    isMounted = false;
+  };
+}, [file]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="w-full h-full object-cover"
+    />
+  );
+}
+
+
+
 
 export default function ChatbotPage() {
   const { user } = useAuth();
@@ -425,7 +502,7 @@ setAttachedFiles([]);
       exit={{ opacity: 0, y: 8 }}
       className="flex gap-3 mb-2 overflow-x-auto"
     >
-      {attachedFiles.map((file, index) => (
+      {attachedFiles.slice(0, 5).map((file, index) => (
         <div
           key={index}
           className="relative w-24 h-28 rounded-xl overflow-hidden flex-shrink-0"
@@ -435,10 +512,7 @@ setAttachedFiles([]);
           }}
         >
           {/* PDF Preview */}
-          <div className="w-full h-full flex items-center justify-center text-xs font-semibold"
-            style={{ color: "var(--color-text-muted)" }}>
-            PDF
-          </div>
+          <PDFPreview file={file} />
 
           {/* File Name */}
           <div
@@ -462,6 +536,16 @@ setAttachedFiles([]);
           </button>
         </div>
       ))}
+
+    {attachedFiles.length > 5 && (
+  <div
+    className="flex items-center justify-center text-xs px-3 min-w-[80px]"
+    style={{ color: "var(--color-text-muted)" }}
+  >
+    +{attachedFiles.length - 5} more files
+  </div>
+)}
+
     </motion.div>
   )}
 </AnimatePresence>
