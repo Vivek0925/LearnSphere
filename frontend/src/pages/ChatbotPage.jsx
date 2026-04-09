@@ -94,7 +94,7 @@ export default function ChatbotPage() {
   const [selectedModel, setSelectedModel] = useState("llama-3.1-8b");
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [copiedId, setCopiedId]         = useState(null);
-  const [attachedFile, setAttachedFile] = useState(null);
+  const [attachedFiles, setAttachedFiles] = useState([]);
 
   const bottomRef   = useRef(null);
   const textareaRef = useRef(null);
@@ -118,7 +118,7 @@ export default function ChatbotPage() {
 
   const sendMessage = async (text) => {
     const msg = text || input.trim();
-    if (!msg && !attachedFile) return;
+ if (!msg && attachedFiles.length === 0) return;
     if (loading) return;
 
     setInput("");
@@ -128,20 +128,20 @@ export default function ChatbotPage() {
       id: Date.now(),
       role: "user",
       text: msg,
-      fileName: attachedFile?.name || null,
+     fileName: attachedFiles.map(f => f.name).join(", "),
       time: new Date(),
     };
     setMessages((prev) => [...prev, userMsg]);
 
-    const fileToSend = attachedFile;
-    setAttachedFile(null);
+const filesToSend = attachedFiles;
+setAttachedFiles([]);
     setLoading(true);
 
     try {
       const res = await chatbotService.sendMessage(
         msg,
         getHistory(),
-        fileToSend,
+        filesToSend,
         { model: selectedModel } // sends selected OpenRouter free model key
       );
       setMessages((prev) => [
@@ -417,42 +417,91 @@ export default function ChatbotPage() {
 
         {/* Input area */}
         <div className="p-3 md:p-4 border-t border-[var(--color-border)] flex-shrink-0">
-          <AnimatePresence>
-            {attachedFile && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                className="flex items-center gap-2 px-3 py-2 mb-2 rounded-xl w-fit"
-                style={{ background: "rgba(111,97,255,0.12)", border: "1px solid rgba(111,97,255,0.3)" }}
-              >
-                <FileText size={14} className="text-primary-400" />
-                <span className="text-xs font-medium text-primary-400 max-w-[200px] truncate">{attachedFile.name}</span>
-                <button onClick={() => setAttachedFile(null)} className="ml-1 hover:text-red-400 transition-colors" style={{ color: "var(--color-text-muted)" }}>
-                  <X size={12} />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+         <AnimatePresence>
+  {attachedFiles.length > 0 && (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      className="flex gap-3 mb-2 overflow-x-auto"
+    >
+      {attachedFiles.map((file, index) => (
+        <div
+          key={index}
+          className="relative w-24 h-28 rounded-xl overflow-hidden flex-shrink-0"
+          style={{
+            background: "var(--color-surface-2)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          {/* PDF Preview */}
+          <div className="w-full h-full flex items-center justify-center text-xs font-semibold"
+            style={{ color: "var(--color-text-muted)" }}>
+            PDF
+          </div>
+
+          {/* File Name */}
+          <div
+            className="absolute bottom-0 left-0 right-0 text-[10px] px-1 py-0.5 truncate"
+            style={{
+              background: "rgba(0,0,0,0.6)",
+              color: "#fff",
+            }}
+          >
+            {file.name}
+          </div>
+
+          {/* Remove Button */}
+          <button
+            onClick={() =>
+              setAttachedFiles(prev => prev.filter((_, i) => i !== index))
+            }
+            className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-red-500"
+          >
+            <X size={10} />
+          </button>
+        </div>
+      ))}
+    </motion.div>
+  )}
+</AnimatePresence>
 
           <div className="flex items-end gap-2 p-2 rounded-2xl"
             style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) { setAttachedFile(file); toast.success(`${file.name} attached`); }
-                e.target.value = "";
-              }}
-            />
+          <input
+  ref={fileInputRef}
+  type="file"
+  accept=".pdf"
+  multiple
+  className="hidden"
+ onChange={(e) => {
+  const files = Array.from(e.target.files);
+
+  if (files.length > 0) {
+    setAttachedFiles(prev => {
+      const newFiles = files.filter(
+        f => !prev.some(p => p.name === f.name)
+      );
+
+      // ✅ correct handling
+      if (newFiles.length === 0) {
+        toast.error("Files already added");
+        return prev;
+      }
+
+      toast.success(`${newFiles.length} new file(s) attached`);
+      return [...prev, ...newFiles];
+    });
+  }
+
+  e.target.value = null;
+}}
+/>
 
             <button
               onClick={() => fileInputRef.current?.click()}
               className="p-2 rounded-xl transition-all flex-shrink-0 hover:bg-primary-500/10"
-              style={{ color: attachedFile ? "var(--color-primary)" : "var(--color-text-muted)" }}
+              style={{ color: attachedFiles.length > 0  ? "var(--color-primary)" : "var(--color-text-muted)" }}
               title="Attach PYQ PDF"
             >
               <Paperclip size={18} />
@@ -463,7 +512,11 @@ export default function ChatbotPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Ask anything or attach a PYQ PDF..."}
+             placeholder={
+  attachedFiles.length > 0
+    ? `Ask about ${attachedFiles[0].name}...`
+    : "Ask anything or attach a PYQ PDF..."
+}
               rows={1}
               className="flex-1 bg-transparent px-2 py-2 text-sm outline-none resize-none leading-relaxed"
               style={{ color: "var(--color-text)", maxHeight: "160px", minHeight: "40px" }}
@@ -473,7 +526,7 @@ export default function ChatbotPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => sendMessage()}
-              disabled={(!input.trim() && !attachedFile) || loading}
+              disabled={(!input.trim() && attachedFiles.length === 0) || loading}
               className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0 disabled:opacity-40 transition-all"
               style={{ background: "linear-gradient(135deg, #6f61ff, #8f87ff)" }}
             >
