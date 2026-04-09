@@ -1,28 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Send,
-  Bot,
-  User,
-  Sparkles,
-  Trash2,
-  Copy,
-  Check,
-  BookOpen,
-  FileQuestion,
-  TrendingUp,
-  Lightbulb,
-  ChevronDown,
-  Loader2,
-  Paperclip,
-  X,
-  FileText,
+  Send, Bot, User, Sparkles, Trash2, Copy, Check,
+  BookOpen, FileQuestion, TrendingUp, Lightbulb,
+  ChevronDown, Loader2, Paperclip, X, FileText,
 } from "lucide-react";
 import { chatbotService } from "../services";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
-// ── Markdown renderer ─────────────────────────────────────────────────────────
 function MessageContent({ text }) {
   const lines = text.split("\n");
   return (
@@ -33,46 +19,25 @@ function MessageContent({ text }) {
         const parts = line.split(/(\*\*.*?\*\*)/g);
         const rendered = parts.map((p, j) =>
           p.startsWith("**") && p.endsWith("**") ? (
-            <strong
-              key={j}
-              className="font-semibold"
-              style={{ color: "var(--color-text)" }}
-            >
+            <strong key={j} className="font-semibold" style={{ color: "var(--color-text)" }}>
               {p.slice(2, -2)}
             </strong>
-          ) : (
-            p
-          ),
+          ) : (p)
         );
 
         if (line.trim().startsWith("- ") || line.trim().startsWith("• ")) {
           return (
             <div key={i} className="flex items-start gap-2 ml-2">
               <span className="w-1.5 h-1.5 rounded-full bg-primary-400 mt-2 flex-shrink-0" />
-              <span>
-                {rendered.map((p) =>
-                  typeof p === "string" ? p.replace(/^[-•]\s*/, "") : p,
-                )}
-              </span>
+              <span>{rendered.map((p) => typeof p === "string" ? p.replace(/^[-•]\s*/, "") : p)}</span>
             </div>
           );
         }
 
-        if (
-          line.trim().startsWith("`") &&
-          line.trim().endsWith("`") &&
-          line.trim().length > 2
-        ) {
+        if (line.trim().startsWith("`") && line.trim().endsWith("`") && line.trim().length > 2) {
           return (
-            <code
-              key={i}
-              className="block px-3 py-2 rounded-lg text-xs font-mono"
-              style={{
-                background: "var(--color-surface-2)",
-                color: "var(--color-primary)",
-                border: "1px solid var(--color-border)",
-              }}
-            >
+            <code key={i} className="block px-3 py-2 rounded-lg text-xs font-mono"
+              style={{ background: "var(--color-surface-2)", color: "var(--color-primary)", border: "1px solid var(--color-border)" }}>
               {line.trim().slice(1, -1)}
             </code>
           );
@@ -84,37 +49,13 @@ function MessageContent({ text }) {
               <span className="text-xs font-bold text-primary-400 mt-0.5 w-4 flex-shrink-0">
                 {line.trim().match(/^(\d+)\./)?.[1]}.
               </span>
-              <span>
-                {rendered.map((p) =>
-                  typeof p === "string" ? p.replace(/^\d+\.\s*/, "") : p,
-                )}
-              </span>
+              <span>{rendered.map((p) => typeof p === "string" ? p.replace(/^\d+\.\s*/, "") : p)}</span>
             </div>
           );
         }
 
-        if (line.startsWith("### ")) {
-          return (
-            <p
-              key={i}
-              className="font-bold text-base mt-2"
-              style={{ color: "var(--color-text)" }}
-            >
-              {line.slice(4)}
-            </p>
-          );
-        }
-        if (line.startsWith("## ")) {
-          return (
-            <p
-              key={i}
-              className="font-bold text-lg mt-3"
-              style={{ color: "var(--color-text)" }}
-            >
-              {line.slice(3)}
-            </p>
-          );
-        }
+        if (line.startsWith("### ")) return <p key={i} className="font-bold text-base mt-2" style={{ color: "var(--color-text)" }}>{line.slice(4)}</p>;
+        if (line.startsWith("## "))  return <p key={i} className="font-bold text-lg mt-3"  style={{ color: "var(--color-text)" }}>{line.slice(3)}</p>;
 
         return <p key={i}>{rendered}</p>;
       })}
@@ -122,35 +63,22 @@ function MessageContent({ text }) {
   );
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 const SUGGESTED_PROMPTS = [
-  { icon: BookOpen, label: "Explain AVL trees", color: "#6366f1" },
-  {
-    icon: FileQuestion,
-    label: "Most important OS topics for exam?",
-    color: "#10b981",
-  },
-  {
-    icon: TrendingUp,
-    label: "Difference between TCP and UDP",
-    color: "#f59e0b",
-  },
-  { icon: Lightbulb, label: "Explain deadlock with example", color: "#ec4899" },
-  {
-    icon: BookOpen,
-    label: "What is database normalization?",
-    color: "#3b82f6",
-  },
-  { icon: Lightbulb, label: "Quick sort vs merge sort", color: "#8b5cf6" },
+  { icon: BookOpen,      label: "Explain AVL trees",                  color: "#6366f1" },
+  { icon: FileQuestion,  label: "Most important OS topics for exam?",  color: "#10b981" },
+  { icon: TrendingUp,    label: "Difference between TCP and UDP",      color: "#f59e0b" },
+  { icon: Lightbulb,     label: "Explain deadlock with example",       color: "#ec4899" },
+  { icon: BookOpen,      label: "What is database normalization?",     color: "#3b82f6" },
+  { icon: Lightbulb,     label: "Quick sort vs merge sort",            color: "#8b5cf6" },
 ];
 
 const FREE_MODELS = [
-  { id: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Free)" },
-  { id: "gemini-1.5-pro",   label: "Gemini 1.5 Pro (Free)"   },
-  { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash (Free)" },
+  { id: "llama-3.1-8b",   label: "Llama 3.1 8B (Free)" },
+  { id: "llama-3.2-3b",   label: "Llama 3.2 3B (Free)" },
+  { id: "mistral-7b",     label: "Mistral 7B (Free)" },
+  { id: "qwen-2.5-7b",    label: "Qwen 2.5 7B (Free)" },
 ];
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function ChatbotPage() {
   const { user } = useAuth();
   const [messages, setMessages] = useState([
@@ -161,16 +89,14 @@ export default function ChatbotPage() {
       time: new Date(),
     },
   ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(
-    "google/gemma-2-9b-it:free",
-  );
+  const [input, setInput]               = useState("");
+  const [loading, setLoading]           = useState(false);
+  const [selectedModel, setSelectedModel] = useState("llama-3.1-8b");
   const [showModelPicker, setShowModelPicker] = useState(false);
-  const [copiedId, setCopiedId] = useState(null);
+  const [copiedId, setCopiedId]         = useState(null);
   const [attachedFile, setAttachedFile] = useState(null);
 
-  const bottomRef = useRef(null);
+  const bottomRef   = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -181,8 +107,7 @@ export default function ChatbotPage() {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height =
-        Math.min(textareaRef.current.scrollHeight, 160) + "px";
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 160) + "px";
     }
   }, [input]);
 
@@ -217,9 +142,7 @@ export default function ChatbotPage() {
         msg,
         getHistory(),
         fileToSend,
-        {
-          model: selectedModel,
-        },
+        { model: selectedModel } // sends selected OpenRouter free model key
       );
       setMessages((prev) => [
         ...prev,
@@ -262,31 +185,24 @@ export default function ChatbotPage() {
   };
 
   const clearChat = () => {
-    setMessages([
-      {
-        id: 1,
-        role: "assistant",
-        text: "Chat cleared! What would you like to learn about?",
-        time: new Date(),
-      },
-    ]);
+    setMessages([{
+      id: 1,
+      role: "assistant",
+      text: "Chat cleared! What would you like to learn about?",
+      time: new Date(),
+    }]);
     toast.success("Chat cleared");
   };
 
   const formatTime = (date) =>
-    new Date(date).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   const getAssistantSourceLabel = (msg) => {
     if (msg.fallback || msg.model === "local-fallback") return "Local fallback";
-    if (msg.model)
-      return `Live AI · ${msg.model.split("/").pop()?.split(":")[0] || msg.model}`;
+    if (msg.model) return `Live AI · ${msg.model.split("/").pop()?.split(":")[0] || msg.model}`;
     return "Live AI";
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full animate-fade-in">
       {/* Header */}
@@ -296,25 +212,15 @@ export default function ChatbotPage() {
         className="flex items-center justify-between mb-4 flex-shrink-0"
       >
         <div className="flex items-center gap-3">
-          <div
-            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg"
-            style={{ boxShadow: "0 8px 24px rgba(111,97,255,0.3)" }}
-          >
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg"
+            style={{ boxShadow: "0 8px 24px rgba(111,97,255,0.3)" }}>
             <Sparkles size={20} className="text-white" />
           </div>
           <div>
-            <h1
-              className="text-xl font-bold"
-              style={{ color: "var(--color-text)" }}
-            >
-              AI Tutor
-            </h1>
+            <h1 className="text-xl font-bold" style={{ color: "var(--color-text)" }}>AI Tutor</h1>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span
-                className="text-xs"
-                style={{ color: "var(--color-text-muted)" }}
-              >
+              <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
                 Online · Powered by OpenRouter
               </span>
             </div>
@@ -335,13 +241,9 @@ export default function ChatbotPage() {
             >
               <Bot size={13} />
               <span className="hidden sm:block max-w-[140px] truncate">
-                {FREE_MODELS.find((m) => m.id === selectedModel)?.label ||
-                  "Select model"}
+                {FREE_MODELS.find((m) => m.id === selectedModel)?.label || "Select model"}
               </span>
-              <ChevronDown
-                size={13}
-                className={`transition-transform ${showModelPicker ? "rotate-180" : ""}`}
-              />
+              <ChevronDown size={13} className={`transition-transform ${showModelPicker ? "rotate-180" : ""}`} />
             </button>
 
             <AnimatePresence>
@@ -358,31 +260,18 @@ export default function ChatbotPage() {
                   }}
                 >
                   <div className="p-2">
-                    <p
-                      className="text-xs font-semibold px-2 py-1.5 mb-1"
-                      style={{ color: "var(--color-text-muted)" }}
-                    >
+                    <p className="text-xs font-semibold px-2 py-1.5 mb-1" style={{ color: "var(--color-text-muted)" }}>
                       Free Models (OpenRouter)
                     </p>
                     {FREE_MODELS.map((model) => (
                       <button
                         key={model.id}
-                        onClick={() => {
-                          setSelectedModel(model.id);
-                          setShowModelPicker(false);
-                        }}
+                        onClick={() => { setSelectedModel(model.id); setShowModelPicker(false); }}
                         className="w-full text-left px-3 py-2.5 rounded-xl text-xs transition-all hover:bg-[var(--color-surface-2)] flex items-center justify-between"
-                        style={{
-                          color:
-                            selectedModel === model.id
-                              ? "var(--color-primary)"
-                              : "var(--color-text)",
-                        }}
+                        style={{ color: selectedModel === model.id ? "var(--color-primary)" : "var(--color-text)" }}
                       >
                         {model.label}
-                        {selectedModel === model.id && (
-                          <Check size={12} className="text-primary-400" />
-                        )}
+                        {selectedModel === model.id && <Check size={12} className="text-primary-400" />}
                       </button>
                     ))}
                   </div>
@@ -395,11 +284,7 @@ export default function ChatbotPage() {
           <button
             onClick={clearChat}
             className="p-2.5 rounded-xl transition-all hover:bg-red-500/10 hover:text-red-400"
-            style={{
-              color: "var(--color-text-muted)",
-              border: "1px solid var(--color-border)",
-              background: "var(--color-surface)",
-            }}
+            style={{ color: "var(--color-text-muted)", border: "1px solid var(--color-border)", background: "var(--color-surface)" }}
             title="Clear chat"
           >
             <Trash2 size={15} />
@@ -419,114 +304,60 @@ export default function ChatbotPage() {
               transition={{ duration: 0.3 }}
               className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"} group`}
             >
-              {/* Avatar */}
-              <div
-                className={`w-9 h-9 rounded-2xl flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md ${
-                  msg.role === "user"
-                    ? "bg-gradient-to-br from-primary-400 to-primary-600 text-white"
-                    : "bg-gradient-to-br from-primary-500 to-primary-700 text-white"
-                }`}
-              >
-                {msg.role === "user" ? (
-                  user?.name?.[0]?.toUpperCase() || <User size={16} />
-                ) : (
-                  <Sparkles size={16} />
-                )}
+              <div className={`w-9 h-9 rounded-2xl flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-md ${
+                msg.role === "user"
+                  ? "bg-gradient-to-br from-primary-400 to-primary-600 text-white"
+                  : "bg-gradient-to-br from-primary-500 to-primary-700 text-white"
+              }`}>
+                {msg.role === "user" ? (user?.name?.[0]?.toUpperCase() || <User size={16} />) : <Sparkles size={16} />}
               </div>
 
-              {/* Bubble */}
-              <div
-                className={`flex flex-col gap-1 max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"}`}
-              >
+              <div className={`flex flex-col gap-1 max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
                 <div
-                  className={`px-4 py-3 rounded-2xl ${
-                    msg.role === "user"
-                      ? "rounded-tr-sm text-white"
-                      : "rounded-tl-sm"
-                  } ${msg.isError ? "border border-red-500/30" : ""}`}
-                  style={
-                    msg.role === "user"
-                      ? {
-                          background:
-                            "linear-gradient(135deg, #6f61ff, #8f87ff)",
-                        }
-                      : {
-                          background: "var(--color-surface-2)",
-                          border: "1px solid var(--color-border)",
-                          color: "var(--color-text)",
-                        }
+                  className={`px-4 py-3 rounded-2xl ${msg.role === "user" ? "rounded-tr-sm text-white" : "rounded-tl-sm"} ${msg.isError ? "border border-red-500/30" : ""}`}
+                  style={msg.role === "user"
+                    ? { background: "linear-gradient(135deg, #6f61ff, #8f87ff)" }
+                    : { background: "var(--color-surface-2)", border: "1px solid var(--color-border)", color: "var(--color-text)" }
                   }
                 >
-                  {/* Message text */}
-                  {msg.role === "user" ? (
-                    <p className="text-sm leading-relaxed">{msg.text}</p>
-                  ) : (
-                    <MessageContent text={msg.text} />
-                  )}
+                  {msg.role === "user"
+                    ? <p className="text-sm leading-relaxed">{msg.text}</p>
+                    : <MessageContent text={msg.text} />
+                  }
 
-                  {/* ── PDF badge inside user bubble (Step F) ── */}
                   {msg.fileName && (
                     <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/20">
                       <FileText size={12} className="opacity-80" />
-                      <span className="text-xs opacity-80 truncate max-w-[180px]">
-                        {msg.fileName}
-                      </span>
+                      <span className="text-xs opacity-80 truncate max-w-[180px]">{msg.fileName}</span>
                     </div>
                   )}
 
-                  {/* PDF analyzed badge on AI response */}
                   {msg.wasPDF && msg.role === "assistant" && (
                     <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-primary-400/20">
                       <FileText size={12} className="text-primary-400" />
-                      <span className="text-xs text-primary-400 font-medium">
-                        PYQ Analysis Complete
-                      </span>
+                      <span className="text-xs text-primary-400 font-medium">PYQ Analysis Complete</span>
                     </div>
                   )}
                 </div>
 
-                {/* Timestamp + model + copy row */}
-                <div
-                  className={`flex items-center gap-2 px-1 opacity-0 group-hover:opacity-100 transition-opacity ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
-                >
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--color-text-muted)" }}
-                  >
-                    {formatTime(msg.time)}
-                  </span>
+                <div className={`flex items-center gap-2 px-1 opacity-0 group-hover:opacity-100 transition-opacity ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                  <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>{formatTime(msg.time)}</span>
                   {msg.role === "assistant" && (msg.model || msg.fallback) && (
-                    <span
-                      className="text-xs px-1.5 py-0.5 rounded-md"
+                    <span className="text-xs px-1.5 py-0.5 rounded-md"
                       style={{
-                        background:
-                          msg.fallback || msg.model === "local-fallback"
-                            ? "rgba(245, 158, 11, 0.12)"
-                            : "rgba(16, 185, 129, 0.12)",
-                        color:
-                          msg.fallback || msg.model === "local-fallback"
-                            ? "#f59e0b"
-                            : "#10b981",
-                        border:
-                          msg.fallback || msg.model === "local-fallback"
-                            ? "1px solid rgba(245, 158, 11, 0.25)"
-                            : "1px solid rgba(16, 185, 129, 0.25)",
+                        background: msg.fallback || msg.model === "local-fallback" ? "rgba(245,158,11,0.12)" : "rgba(16,185,129,0.12)",
+                        color: msg.fallback || msg.model === "local-fallback" ? "#f59e0b" : "#10b981",
+                        border: msg.fallback || msg.model === "local-fallback" ? "1px solid rgba(245,158,11,0.25)" : "1px solid rgba(16,185,129,0.25)",
                       }}
                     >
                       {getAssistantSourceLabel(msg)}
                     </span>
                   )}
                   {msg.role === "assistant" && !msg.isError && (
-                    <button
-                      onClick={() => copyMessage(msg.id, msg.text)}
+                    <button onClick={() => copyMessage(msg.id, msg.text)}
                       className="p-1 rounded-lg hover:bg-[var(--color-surface-2)] transition-colors"
-                      style={{ color: "var(--color-text-muted)" }}
-                    >
-                      {copiedId === msg.id ? (
-                        <Check size={12} className="text-emerald-400" />
-                      ) : (
-                        <Copy size={12} />
-                      )}
+                      style={{ color: "var(--color-text-muted)" }}>
+                      {copiedId === msg.id ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
                     </button>
                   )}
                 </div>
@@ -534,29 +365,16 @@ export default function ChatbotPage() {
             </motion.div>
           ))}
 
-          {/* Typing indicator */}
           {loading && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex gap-3"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
               <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0">
                 <Sparkles size={16} className="text-white" />
               </div>
-              <div
-                className="px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-3"
-                style={{
-                  background: "var(--color-surface-2)",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
+              <div className="px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-3"
+                style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}>
                 <Loader2 size={15} className="animate-spin text-primary-400" />
-                <span
-                  className="text-sm"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  {attachedFile ? "Analyzing PDF..." : "Thinking..."}
+                <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+                  {FREE_MODELS.find(m => m.id === selectedModel)?.label.split(' (')[0]} is thinking...
                 </span>
               </div>
             </motion.div>
@@ -565,7 +383,7 @@ export default function ChatbotPage() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Suggested prompts — only when no messages yet */}
+        {/* Suggested prompts */}
         <AnimatePresence>
           {messages.length <= 1 && !loading && (
             <motion.div
@@ -574,10 +392,7 @@ export default function ChatbotPage() {
               exit={{ opacity: 0, height: 0 }}
               className="px-4 md:px-6 pb-3 border-t border-[var(--color-border)]"
             >
-              <p
-                className="text-xs font-semibold mt-3 mb-2"
-                style={{ color: "var(--color-text-muted)" }}
-              >
+              <p className="text-xs font-semibold mt-3 mb-2" style={{ color: "var(--color-text-muted)" }}>
                 Suggested questions
               </p>
               <div className="flex flex-wrap gap-2">
@@ -589,11 +404,7 @@ export default function ChatbotPage() {
                     transition={{ delay: i * 0.04 }}
                     onClick={() => sendMessage(s.label)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:scale-105 active:scale-95"
-                    style={{
-                      background: `${s.color}15`,
-                      color: s.color,
-                      border: `1px solid ${s.color}30`,
-                    }}
+                    style={{ background: `${s.color}15`, color: s.color, border: `1px solid ${s.color}30` }}
                   >
                     <s.icon size={11} />
                     {s.label}
@@ -604,9 +415,8 @@ export default function ChatbotPage() {
           )}
         </AnimatePresence>
 
-        {/* Bottom section — file preview + input */}
+        {/* Input area */}
         <div className="p-3 md:p-4 border-t border-[var(--color-border)] flex-shrink-0">
-          {/* File preview pill */}
           <AnimatePresence>
             {attachedFile && (
               <motion.div
@@ -614,35 +424,19 @@ export default function ChatbotPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
                 className="flex items-center gap-2 px-3 py-2 mb-2 rounded-xl w-fit"
-                style={{
-                  background: "rgba(111,97,255,0.12)",
-                  border: "1px solid rgba(111,97,255,0.3)",
-                }}
+                style={{ background: "rgba(111,97,255,0.12)", border: "1px solid rgba(111,97,255,0.3)" }}
               >
                 <FileText size={14} className="text-primary-400" />
-                <span className="text-xs font-medium text-primary-400 max-w-[200px] truncate">
-                  {attachedFile.name}
-                </span>
-                <button
-                  onClick={() => setAttachedFile(null)}
-                  className="ml-1 hover:text-red-400 transition-colors"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
+                <span className="text-xs font-medium text-primary-400 max-w-[200px] truncate">{attachedFile.name}</span>
+                <button onClick={() => setAttachedFile(null)} className="ml-1 hover:text-red-400 transition-colors" style={{ color: "var(--color-text-muted)" }}>
                   <X size={12} />
                 </button>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Input bar */}
-          <div
-            className="flex items-end gap-2 p-2 rounded-2xl"
-            style={{
-              background: "var(--color-surface-2)",
-              border: "1px solid var(--color-border)",
-            }}
-          >
-            {/* Hidden file input */}
+          <div className="flex items-end gap-2 p-2 rounded-2xl"
+            style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}>
             <input
               ref={fileInputRef}
               type="file"
@@ -650,74 +444,45 @@ export default function ChatbotPage() {
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  setAttachedFile(file);
-                  toast.success(`${file.name} attached`);
-                }
+                if (file) { setAttachedFile(file); toast.success(`${file.name} attached`); }
                 e.target.value = "";
               }}
             />
 
-            {/* Paperclip button */}
             <button
               onClick={() => fileInputRef.current?.click()}
               className="p-2 rounded-xl transition-all flex-shrink-0 hover:bg-primary-500/10"
-              style={{
-                color: attachedFile
-                  ? "var(--color-primary)"
-                  : "var(--color-text-muted)",
-              }}
+              style={{ color: attachedFile ? "var(--color-primary)" : "var(--color-text-muted)" }}
               title="Attach PYQ PDF"
             >
               <Paperclip size={18} />
             </button>
 
-            {/* Textarea */}
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              placeholder={
-                attachedFile
-                  ? `Ask about ${attachedFile.name}...`
-                  : "Ask anything or attach a PYQ PDF..."
-              }
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+              placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Ask anything or attach a PYQ PDF..."}
               rows={1}
               className="flex-1 bg-transparent px-2 py-2 text-sm outline-none resize-none leading-relaxed"
-              style={{
-                color: "var(--color-text)",
-                maxHeight: "160px",
-                minHeight: "40px",
-              }}
+              style={{ color: "var(--color-text)", maxHeight: "160px", minHeight: "40px" }}
             />
 
-            {/* Send button */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => sendMessage()}
               disabled={(!input.trim() && !attachedFile) || loading}
               className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0 disabled:opacity-40 transition-all"
-              style={{
-                background: "linear-gradient(135deg, #6f61ff, #8f87ff)",
-              }}
+              style={{ background: "linear-gradient(135deg, #6f61ff, #8f87ff)" }}
             >
               <Send size={16} />
             </motion.button>
           </div>
 
-          <p
-            className="text-xs text-center mt-2"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            Powered by OpenRouter · Attach PYQ PDFs for AI analysis ·
-            Shift+Enter for new line
+          <p className="text-xs text-center mt-2" style={{ color: "var(--color-text-muted)" }}>
+            Powered by OpenRouter · Attach PYQ PDFs for AI analysis · Shift+Enter for new line
           </p>
         </div>
       </div>

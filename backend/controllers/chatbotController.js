@@ -3,200 +3,203 @@ const fs = require("fs");
 const PYQ = require("../models/PYQ");
 const Subject = require("../models/Subject");
 
-// ── Gemini API call ───────────────────────────────────────────────────────────
-async function callGemini(messages) {
-  const systemMsg = messages.find(m => m.role === "system");
-  const chatMessages = messages.filter(m => m.role !== "system");
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions";
+const APP_NAME = process.env.APP_NAME || "LearnSphere";
+const APP_URL = process.env.APP_URL || "http://localhost:3000";
 
-  const geminiMessages = chatMessages.map(m => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }]
-  }));
+const MODEL_CANDIDATES = {
+  "llama-3.1-8b": [
+    "meta-llama/llama-3.1-8b-instruct:free",
+    "meta-llama/llama-3.1-8b-instruct:latest",
+    "meta-llama/llama-3.1-8b-instruct",
+  ],
+  "llama-3.2-3b": [
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "meta-llama/llama-3.2-3b-instruct:latest",
+    "meta-llama/llama-3.2-3b-instruct",
+  ],
+  "mistral-7b": [
+    "mistral-7b-instruct:latest",
+    "mistralai/mistral-7b-instruct:free",
+    "mistralai/mistral-7b-instruct",
+  ],
+  "qwen-2.5-7b": [
+    "qwen/qwen-2.5-7b-instruct:free",
+    "qwen/qwen-2.5-7b-instruct:latest",
+    "qwen/qwen-2.5-7b-instruct",
+  ],
+};
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: systemMsg
-          ? { parts: [{ text: systemMsg.content }] }
-          : undefined,
-        contents: geminiMessages,
-        generationConfig: {
-          maxOutputTokens: 2000,
-          temperature: 0.4
-        }
-      })
-    }
-  );
+const DEFAULT_MODEL_KEY = "llama-3.1-8b";
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    console.error("Gemini error:", data);
-    throw new Error(data.error?.message || "Gemini API error");
+async function callOpenRouter(messages, modelKey) {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY missing");
   }
 
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Empty response from Gemini");
+  const candidates = MODEL_CANDIDATES[modelKey] || [modelKey];
+  let lastError = null;
 
-  return { text, model: "gemini-1.5-flash" };
+  for (const model of candidates) {
+    try {
+      const response = await fetch(OPENROUTER_BASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "HTTP-Referer": APP_URL,
+          "X-Title": APP_NAME,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.4,
+          max_tokens: 2000,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        lastError = new Error(data.error?.message || "OpenRouter error");
+        continue;
+      }
+
+      const text = data.choices?.[0]?.message?.content?.trim();
+      if (!text) throw new Error("Empty AI response");
+
+      return { text, model };
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error("No working model found");
 }
 
-// ── Main chat handler ─────────────────────────────────────────────────────────
 exports.chat = async (req, res) => {
   try {
-    const hasPDF = !!req.file;
+    const files = req.files || []; // ✅ MULTIPLE FILES
+    const hasPDF = files.length > 0;
 
-    // Parse body safely (FormData sends everything as strings)
     const message = req.body.message || "";
     const subjectId = req.body.subjectId || null;
     const examYear = req.body.examYear || null;
     const examType = req.body.examType || "endterm";
+    const modelKey = req.body.model || DEFAULT_MODEL_KEY;
 
-    let history = [];
-    try {
-      const raw = req.body.history;
-      if (raw) history = typeof raw === "string" ? JSON.parse(raw) : raw;
-    } catch { history = []; }
+    let combinedText = "";
 
-    let subjectName = "Engineering";
-    let semester = "";
-    let topics = [];
-    let previousPYQs = [];
-
-    // ── System prompt ─────────────────────────────────────────────────────
-    const systemPrompt = `You are LearnSphere AI, an expert engineering tutor and exam analyzer for CSE students.
-
-You can:
-- Answer questions about Data Structures, Algorithms, OS, DBMS, Networks, Software Engineering and all CSE subjects
-- Analyze uploaded PYQ (Previous Year Question) papers and identify important topics
-- Detect repeated questions across multiple exam papers
-- Predict which topics are likely to appear in upcoming exams
-- Give study recommendations based on PYQ patterns
-
-When analyzing a PYQ paper:
-- List all extracted questions clearly numbered
-- Group by topic and score importance as: Very Important / Important / Normal
-- Flag any questions that seem repeated from common exam patterns
-- Give top 3 predicted topics for next exam
-- Be specific and actionable`;
-
-    let userContent = message;
-
-    // ── If PDF uploaded ───────────────────────────────────────────────────
+    // 🔥 MULTI PDF PROCESSING
     if (hasPDF) {
-      let pdfText = "";
-      try {
-        const dataBuffer = fs.readFileSync(req.file.path);
-        const pdfData = await pdfParse(dataBuffer);
-        pdfText = pdfData.text?.trim() || "";
-      } catch (e) {
-        return res.status(400).json({
-          message: "Could not read PDF. Make sure it is a valid text-based PDF."
-        });
-      }
-
-      if (!pdfText) {
-        return res.status(400).json({
-          message: "PDF appears to be scanned/image-based. Please upload a text-based PDF."
-        });
-      }
-
-      if (subjectId) {
+      for (const file of files) {
         try {
-          const subject = await Subject.findById(subjectId);
-          if (subject) {
-            subjectName = subject.name;
-            semester = subject.semester;
-            topics = subject.topics.map(t => t.name);
-            previousPYQs = await PYQ.find({ subjectId })
-              .sort({ examYear: -1 })
-              .limit(4);
+          const buffer = fs.readFileSync(file.path);
+          const pdfData = await pdfParse(buffer);
+
+          if (pdfData.text) {
+            combinedText += `\n\n----- ${file.originalname} -----\n\n`;
+            combinedText += pdfData.text;
           }
-        } catch (e) {
-          console.error("Subject fetch error:", e.message);
+        } catch (err) {
+          console.error("PDF read error:", err.message);
         }
       }
 
-      const previousQs = previousPYQs.length > 0
-        ? previousPYQs
-            .flatMap(p => p.questions.map(q => `[${p.examYear}] ${q.text}`))
-            .join("\n")
-        : "None yet — this is the first paper uploaded for this subject";
-
-      const topicList = topics.length > 0
-        ? topics.join(", ")
-        : "Identify topics from the paper content itself";
-
-      userContent = `${message ? message + "\n\n" : ""}Analyze this PYQ exam paper:
-
-Subject: ${subjectName}${semester ? ` (CSE Sem ${semester})` : ""}
-Known Syllabus Topics: ${topicList}
-Exam Year: ${examYear || "Unknown"}
-Exam Type: ${examType}
-
-Previous Year Questions for repeat detection:
-${previousQs}
-
---- EXAM PAPER TEXT START ---
-${pdfText.slice(0, 4000)}
---- EXAM PAPER TEXT END ---
-
-Please provide:
-1. All extracted questions with topic mapping
-2. Topic importance (Very Important / Important / Normal) with reason
-3. Repeated questions if any match previous years
-4. Top 3 predicted topics for next exam
-5. One-line overall paper insight`;
-
-      // Save to MongoDB in background
-      savePYQToMongo({
-        subjectId,
-        subjectName,
-        examYear,
-        examType,
-        fileName: req.file.originalname,
-        filePath: req.file.path,
-        extractedText: pdfText,
-      }).catch(e => console.error("PYQ background save failed:", e.message));
+      if (!combinedText.trim()) {
+        return res.status(400).json({
+          message: "PDFs contain no readable text",
+        });
+      }
     }
 
-    // ── Guard: empty message ──────────────────────────────────────────────
-    if (!userContent.trim()) {
-      return res.status(400).json({
-        message: "Please enter a message or attach a PDF."
-      });
+    let subjectName = "Engineering";
+    let topics = [];
+
+    if (subjectId) {
+      try {
+        const subject = await Subject.findById(subjectId);
+        if (subject) {
+          subjectName = subject.name;
+          topics = subject.topics.map((t) => t.name);
+        }
+      } catch (e) {
+        console.error("Subject fetch error:", e.message);
+      }
     }
 
-    // ── Build messages array ──────────────────────────────────────────────
-    const allMessages = [
-      { role: "system", content: systemPrompt },
-      ...(Array.isArray(history) ? history : []).slice(-10),
-      { role: "user", content: userContent }
+    // 🔥 POWERFUL PROMPT
+    let userContent = `
+You are an expert exam analyzer.
+
+TASK:
+- Extract important questions from all papers
+- Remove duplicate questions
+- Generate at least 15 important questions
+- Keep questions exam-focused
+- If possible, group by topic
+
+OUTPUT:
+- Numbered list (1,2,3...)
+- Clean formatting
+
+CONTENT:
+${combinedText.slice(0, 12000)}
+`;
+
+    if (message) {
+      userContent = message + "\n\n" + userContent;
+    }
+
+    const messages = [
+      {
+        role: "system",
+        content: "You are LearnSphere AI, expert in analyzing exam papers.",
+      },
+      {
+        role: "user",
+        content: userContent,
+      },
     ];
 
-    // ── Call Gemini ───────────────────────────────────────────────────────
     let aiResponse, usedModel;
+
     try {
-      const result = await callGemini(allMessages);
+      const result = await callOpenRouter(messages, modelKey);
       aiResponse = result.text;
       usedModel = result.model;
-      console.log("✅ Gemini response received");
     } catch (err) {
-      console.error("Gemini failed:", err.message);
       return res.status(500).json({
-        message: `AI Error: ${err.message}. Make sure GEMINI_API_KEY is set in .env`
+        message: `AI Error: ${err.message}`,
       });
+    }
+
+    // 🔥 SAVE PDFs
+    if (hasPDF) {
+      for (const file of files) {
+        try {
+          await PYQ.create({
+            subjectId,
+            subjectName,
+            fileName: file.originalname,
+            filePath: file.path,
+            examYear: examYear || new Date().getFullYear(),
+            examType,
+            extractedText: combinedText,
+            status: "completed",
+          });
+        } catch (e) {
+          console.error("Mongo save error:", e.message);
+        }
+      }
     }
 
     res.json({
       response: aiResponse,
       model: usedModel,
-      wasPDF: hasPDF,
-      fileName: req.file?.originalname || null,
-      timestamp: new Date()
+      filesProcessed: files.length,
+      timestamp: new Date(),
     });
 
   } catch (err) {
@@ -205,22 +208,12 @@ Please provide:
   }
 };
 
-// ── Save PYQ to MongoDB (background, non-blocking) ────────────────────────────
-async function savePYQToMongo({
-  subjectId, subjectName, examYear, examType,
-  fileName, filePath, extractedText
-}) {
-  if (!subjectId || !subjectName) return;
-  await PYQ.create({
-    subjectId,
-    subjectName,
-    fileName,
-    filePath,
-    examYear: parseInt(examYear) || new Date().getFullYear(),
-    examType: examType || "endterm",
-    extractedText,
-    questions: [],
-    topicAnalysis: [],
-    status: "completed"
+exports.getFreeModels = (req, res) => {
+  res.json({
+    models: Object.keys(MODEL_CANDIDATES).map((key) => ({
+      key,
+      label: key,
+    })),
+    default: DEFAULT_MODEL_KEY,
   });
-}
+};
