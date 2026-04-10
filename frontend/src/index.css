@@ -4,18 +4,18 @@
 
 @layer base {
   :root {
-    --color-bg: #f8f8ff;
+    --color-bg: #eef1ff;
     --color-surface: #ffffff;
-    --color-surface-2: #f0f0ff;
-    --color-border: rgba(99, 102, 241, 0.15);
-    --color-text: #0d0d1a;
-    --color-text-muted: #6b7280;
+    --color-surface-2: #f3f5ff;
+    --color-border: rgba(99, 102, 241, 0.24);
+    --color-text: #0f172a;
+    --color-text-muted: #4b5563;
     --color-primary: #6f61ff;
     --color-primary-glow: rgba(111, 97, 255, 0.3);
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.5);
-    --shadow-glass: 0 8px 32px rgba(99, 102, 241, 0.1);
-    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --glass-bg: rgba(255, 255, 255, 0.86);
+    --glass-border: rgba(255, 255, 255, 0.72);
+    --shadow-glass: 0 10px 40px rgba(99, 102, 241, 0.14);
+    --shadow-card: 0 14px 45px rgba(99, 102, 241, 0.11);
   }
   .dark {
     --color-bg: #0a0a14;
