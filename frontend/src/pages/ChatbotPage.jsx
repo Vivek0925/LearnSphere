@@ -233,22 +233,30 @@ setAttachedFiles([]);
           time: new Date(),
         },
       ]);
-    } catch (err) {
-      const errorMsg =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        "Connection failed. Check OPENROUTER_API_KEY in backend .env";
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          role: "assistant",
-          text: `⚠️ ${errorMsg}`,
-          isError: true,
-          time: new Date(),
-        },
-      ]);
-    } finally {
+    }
+    
+   catch (err) {
+  console.error("FULL ERROR:", err); // 🔥 IMPORTANT
+
+  const errorMsg =
+    err.response?.data?.error ||
+    err.response?.data?.message ||
+    err.message || // ✅ ADD THIS
+    "Something went wrong";
+
+  setMessages((prev) => [
+    ...prev,
+    {
+      id: Date.now() + 1,
+      role: "assistant",
+      text: `❌ ERROR: ${errorMsg}`,
+      isError: true,
+      time: new Date(),
+    },
+  ]);
+}
+    
+    finally {
       setLoading(false);
       setTimeout(() => textareaRef.current?.focus(), 100);
     }
