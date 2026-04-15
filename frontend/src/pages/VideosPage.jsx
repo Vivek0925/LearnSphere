@@ -39,6 +39,8 @@ export default function VideosPage() {
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Smart Videos" subtitle="Curated video lectures with smart timestamps" />
 
+      
+
       {/* Subject Filter */}
       <div className="flex gap-2 flex-wrap">
         <button onClick={() => setSubject('')}
