@@ -152,7 +152,7 @@ export default function VideosPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/90 backdrop-blur-md flex justify-center items-center p-2 md:p-6 z-50"
+          className="fixed inset-0 bg-slate-950/45 backdrop-blur-2xl flex justify-center items-center p-2 md:p-6 z-50"
           onClick={() => setSelected(null)}
         >
           <motion.div
@@ -185,7 +185,7 @@ export default function VideosPage() {
             {/* Main Content Area - Scrollable */}
             <div className="flex-1 overflow-y-auto">
               {/* Video Player - Full Width */}
-              <div className="w-full bg-black aspect-video md:aspect-auto md:h-[40vh]">
+              <div className="w-full bg-gradient-to-b from-slate-950 via-black to-slate-900 aspect-video md:aspect-auto md:h-[40vh]">
                 <iframe
                   width="100%"
                   height="100%"
@@ -205,26 +205,39 @@ export default function VideosPage() {
                   <h3 className="font-bold mb-6 text-xl flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
                     <span className="text-2xl">⏱️</span> Timestamps
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {selected.timestamps?.map((t, i) => (
-                      <motion.button
-                        key={i}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="p-4 rounded-xl text-left transition-all hover:border-blue-500/50 group"
-                        style={{
-                          background: 'var(--color-surface-2)',
-                          color: 'var(--color-text)',
-                          border: '1.5px solid var(--color-border)'
-                        }}
-                      >
-                        <div className="font-bold text-lg text-blue-400 group-hover:text-blue-300 transition-colors">
-                          {t.time}
-                        </div>
-                        <div className="text-sm opacity-80 mt-1">{t.label}</div>
-                      </motion.button>
-                    ))}
-                  </div>
+                  {selected.timestamps?.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {selected.timestamps.map((t, i) => (
+                        <motion.button
+                          key={i}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="p-4 rounded-xl text-left transition-all hover:border-blue-500/50 group"
+                          style={{
+                            background: 'var(--color-surface-2)',
+                            color: 'var(--color-text)',
+                            border: '1.5px solid var(--color-border)'
+                          }}
+                        >
+                          <div className="font-bold text-lg text-blue-400 group-hover:text-blue-300 transition-colors">
+                            {t.time}
+                          </div>
+                          <div className="text-sm opacity-80 mt-1">{t.label}</div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div
+                      className="p-4 rounded-xl text-sm"
+                      style={{
+                        background: 'var(--color-surface-2)',
+                        color: 'var(--color-text-muted)',
+                        border: '1px solid var(--color-border)'
+                      }}
+                    >
+                      No chapter timestamps were found in this video description.
+                    </div>
+                  )}
                 </div>
               )}
 
