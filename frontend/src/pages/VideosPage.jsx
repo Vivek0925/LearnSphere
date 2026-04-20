@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, X, SkipForward, Search, Clock } from 'lucide-react';
+import { Play, X, Search, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function VideosPage() {
@@ -152,13 +152,13 @@ export default function VideosPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center p-4 z-50"
+          className="fixed inset-0 bg-black/90 backdrop-blur-md flex justify-center items-center p-2 md:p-6 z-50"
           onClick={() => setSelected(null)}
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl"
+            className="w-[95vw] md:w-[60vw] h-[80vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col"
             style={{
               background: 'var(--color-surface)',
               border: '1px solid var(--color-border)',
@@ -167,58 +167,88 @@ export default function VideosPage() {
           >
             {/* Header with Close Button */}
             <div
-              className="flex justify-between items-center p-6 border-b"
+              className="flex justify-between items-center px-6 md:px-8 py-4 flex-shrink-0 border-b"
               style={{ borderColor: 'var(--color-border)' }}
             >
-              <h2 className="text-xl font-bold line-clamp-1" style={{ color: 'var(--color-text)' }}>
+              <h2 className="text-lg md:text-2xl font-bold line-clamp-2 flex-1" style={{ color: 'var(--color-text)' }}>
                 {selected.title}
               </h2>
               <button
                 onClick={() => setSelected(null)}
-                className="p-2 rounded-lg hover:bg-red-500/20 transition-all hover:text-red-500"
+                className="p-2 rounded-lg hover:bg-red-500/20 transition-all hover:text-red-500 flex-shrink-0 ml-4"
                 style={{ color: 'var(--color-text)' }}
               >
-                <X size={24} />
+                <X size={28} />
               </button>
             </div>
 
-            {/* Video Player */}
-            <div className="w-full bg-black">
-              <iframe
-                width="100%"
-                height="500"
-                src={`https://www.youtube.com/embed/${selected.youtubeId}?rel=0&modestbranding=1`}
-                allowFullScreen
-                className="w-full h-full"
-              />
-            </div>
+            {/* Main Content Area - Scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Video Player - Full Width */}
+              <div className="w-full bg-black aspect-video md:aspect-auto md:h-[40vh]">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={`https://www.youtube.com/embed/${selected.youtubeId}?rel=0&modestbranding=1&autoplay=1`}
+                  allowFullScreen
+                  className="w-full h-full"
+                  style={{ border: 'none' }}
+                />
+              </div>
 
-            {/* Timestamps Section */}
-            {!focusMode && (
-              <div
-                className="p-6 border-t"
-                style={{ borderColor: 'var(--color-border)' }}
-              >
-                <h3 className="font-bold mb-4 text-lg" style={{ color: 'var(--color-text)' }}>
-                  ⏱️ Timestamps
+              {/* Timestamps Section */}
+              {!focusMode && (
+                <div
+                  className="px-6 md:px-8 py-8 border-t"
+                  style={{ borderColor: 'var(--color-border)' }}
+                >
+                  <h3 className="font-bold mb-6 text-xl flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+                    <span className="text-2xl">⏱️</span> Timestamps
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {selected.timestamps?.map((t, i) => (
+                      <motion.button
+                        key={i}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="p-4 rounded-xl text-left transition-all hover:border-blue-500/50 group"
+                        style={{
+                          background: 'var(--color-surface-2)',
+                          color: 'var(--color-text)',
+                          border: '1.5px solid var(--color-border)'
+                        }}
+                      >
+                        <div className="font-bold text-lg text-blue-400 group-hover:text-blue-300 transition-colors">
+                          {t.time}
+                        </div>
+                        <div className="text-sm opacity-80 mt-1">{t.label}</div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Video Info Section */}
+              <div className="px-6 md:px-8 py-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                <h3 className="font-bold mb-3 text-lg" style={{ color: 'var(--color-text)' }}>
+                  📝 About
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {selected.timestamps?.map((t, i) => (
-                    <button
-                      key={i}
-                      className="p-3 rounded-lg text-left transition-all hover:bg-blue-600/20"
-                      style={{
-                        background: 'var(--color-surface-2)',
-                        color: 'var(--color-text)'
-                      }}
-                    >
-                      <div className="font-semibold text-blue-400">{t.time}</div>
-                      <div className="text-sm opacity-80">{t.label}</div>
-                    </button>
-                  ))}
+                <div className="flex flex-wrap gap-4">
+                  <div className="px-4 py-2 rounded-lg" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+                    <span className="text-xs opacity-70">Duration</span>
+                    <div className="font-semibold text-blue-400">{selected.duration}</div>
+                  </div>
+                  <div className="px-4 py-2 rounded-lg" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+                    <span className="text-xs opacity-70">Topic</span>
+                    <div className="font-semibold text-purple-400">{selected.topic}</div>
+                  </div>
+                  <div className="px-4 py-2 rounded-lg" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+                    <span className="text-xs opacity-70">Difficulty</span>
+                    <div className="font-semibold text-yellow-400">{selected.difficulty}</div>
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
           </motion.div>
         </motion.div>
       )}
