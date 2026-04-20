@@ -21,7 +21,8 @@
     "pdf-parse": "^1.1.4",
     "pdf-poppler": "^0.2.3",
     "tesseract.js": "^7.0.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "yt-search": "^2.13.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

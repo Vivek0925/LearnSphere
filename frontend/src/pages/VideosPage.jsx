@@ -5,37 +5,61 @@ import { LoadingSpinner, PageHeader, EmptyState } from '../components/common';
 
 export default function VideosPage() {
   const [videos, setVideos] = useState([]);
-  const [subject, setSubject] = useState('Data Structures');
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
   const [focusMode, setFocusMode] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  const subjects = [
-    'Data Structures',
-    'Algorithms',
-    'Operating Systems',
-    'DBMS',
-    'Computer Networks',
-    'Software Engineering'
-  ];
+  const [timestampsLoading, setTimestampsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     fetchVideos();
-  }, [subject]);
+  }, []);
 
   const fetchVideos = async () => {
     setLoading(true);
+    setErrorMsg('');
     try {
       const res = await fetch(
-        `http://localhost:5000/api/videos?subject=${subject}&topic=${search}`
+        `/api/videos?topic=${encodeURIComponent(search)}`
       );
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message || 'Failed to fetch videos');
+      }
       const data = await res.json();
       setVideos(Array.isArray(data) ? data : []);
-    } catch {
+    } catch (error) {
+      setErrorMsg(error.message || 'Unable to fetch videos right now.');
       setVideos([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openVideo = async (video) => {
+    setSelected(video);
+    setTimestampsLoading(true);
+
+    try {
+      const params = new URLSearchParams({
+        title: video.title || "",
+        description: video.description || "",
+        duration: video.duration || "",
+        topic: search || video.topic || "",
+      });
+
+      const res = await fetch(`/api/videos/timestamps/${video.youtubeId}?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed timestamps request");
+
+      const data = await res.json();
+      if (Array.isArray(data.timestamps) && data.timestamps.length > 0) {
+        setSelected((prev) => (prev ? { ...prev, timestamps: data.timestamps } : prev));
+      }
+    } catch {
+      // Keep existing fallback timestamps already present in selected video.
+    } finally {
+      setTimestampsLoading(false);
     }
   };
 
@@ -75,7 +99,7 @@ export default function VideosPage() {
             Smarter Video Discovery
           </p>
           <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-            Search by topic, switch subject chips, then open any card to watch with generated chapter timestamps.
+            Search any topic directly and open any card to watch with generated chapter timestamps.
           </p>
         </div>
       </motion.div>
@@ -93,7 +117,7 @@ export default function VideosPage() {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search Binary Tree, OS Scheduling..."
+            placeholder="Search any topic: binary tree, cpu scheduling, normalization..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchVideos()}
@@ -112,35 +136,25 @@ export default function VideosPage() {
 
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h3 className="font-bold text-lg" style={{ color: 'var(--color-text)' }}>
-          Recommended Videos
+          Search Results
           <span className="text-sm font-normal ml-2" style={{ color: 'var(--color-text-muted)' }}>
             ({videos.length})
           </span>
         </h3>
-
-        <div className="flex gap-2 flex-wrap">
-          {subjects.map((s) => (
-            <button
-              key={s}
-              onClick={() => setSubject(s)}
-              className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
-                subject === s
-                  ? 'btn-primary !py-1.5 !px-3'
-                  : 'btn-secondary !py-1.5 !px-3'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
       </div>
+
+      {errorMsg && (
+        <div className="p-3 rounded-xl text-sm" style={{ background: '#ef444415', border: '1px solid #ef444455', color: '#fca5a5' }}>
+          {errorMsg}
+        </div>
+      )}
 
       {/* VIDEOS GRID */}
       {videos.length === 0 ? (
         <EmptyState
           icon={Video}
           title="No videos found"
-          description="Try another keyword or switch to a different subject."
+          description="Try another topic keyword or a more specific phrase."
           action={
             <button onClick={fetchVideos} className="btn-primary text-sm py-2.5 px-5">
               Refresh Results
@@ -155,7 +169,7 @@ export default function VideosPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.04 }}
-              onClick={() => setSelected(v)}
+              onClick={() => openVideo(v)}
               className="card overflow-hidden cursor-pointer group"
             >
               <div className="relative overflow-hidden h-52 border-b border-[var(--color-border)]">
@@ -182,7 +196,7 @@ export default function VideosPage() {
 
                 <div className="flex items-center justify-between">
                   <span className="badge text-xs" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
-                    {v.topic || subject}
+                    {v.topic || 'General'}
                   </span>
                   <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                     {v.difficulty || 'intermediate'}
@@ -284,7 +298,9 @@ export default function VideosPage() {
                         border: '1px solid var(--color-border)'
                       }}
                     >
-                      No chapter timestamps were found in this video description.
+                      {timestampsLoading
+                        ? 'Generating AI timestamps...'
+                        : 'No chapter timestamps were found for this video.'}
                     </div>
                   )}
                 </div>
