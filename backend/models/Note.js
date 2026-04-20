@@ -10,7 +10,16 @@ const noteSchema = new mongoose.Schema({
   formulas: [{ type: String }],
   difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
   tags: [{ type: String }],
-  readTime: { type: Number, default: 5 }
+  readTime: { type: Number, default: 5 },
+
+  // 🔥 NEW FIELD
+  links: [
+    {
+      title: String,
+      url: String
+    }
+  ]
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('Note', noteSchema);
