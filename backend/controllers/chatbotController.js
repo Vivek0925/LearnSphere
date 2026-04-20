@@ -17,6 +17,13 @@ const MODEL = "meta-llama/llama-3.1-8b-instruct"; // ✅ BEST
 // const MODEL = "meta-llama/llama-3.2-3b-instruct:free";
 // const MODEL = "qwen/qwen2.5-7b-instruct:free";
 
+const MODEL_MAP = {
+  "llama-3.1-8b": "meta-llama/llama-3.1-8b-instruct",
+  "llama-3.2-3b": "meta-llama/llama-3.2-3b-instruct:free",
+  "mistral-7b": "mistralai/mistral-7b-instruct:free",
+  "qwen-2.5-7b": "qwen/qwen2.5-7b-instruct:free",
+};
+
 // ================= PDF TEXT EXTRACTION =================
 async function extractTextFromPDF(filePath) {
   try {
@@ -65,29 +72,21 @@ async function extractTextFromPDF(filePath) {
 }
 
 // ================= OPENROUTER CALL =================
-async function callOpenRouter(prompt) {
+async function callOpenRouter(messages, modelKey) {
   if (!OPENROUTER_API_KEY) {
     throw new Error("Missing OpenRouter API Key");
   }
 
   try {
+    const resolvedModel = MODEL_MAP[modelKey] || MODEL;
+
     console.log("🚀 Sending to AI...");
 
     const response = await axios.post(
       OPENROUTER_URL,
       {
-        model: MODEL,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an AI tutor. Extract important exam questions from given content.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
+        model: resolvedModel,
+        messages,
         temperature: 0.4,
       },
       {
@@ -118,6 +117,27 @@ exports.chat = async (req, res) => {
     console.log("🔥 CHAT API HIT");
 
     const files = req.files || [];
+    const message = (req.body?.message || "").trim();
+    const model = req.body?.model;
+
+    let parsedHistory = [];
+    if (req.body?.history) {
+      try {
+        const history = JSON.parse(req.body.history);
+        if (Array.isArray(history)) {
+          parsedHistory = history
+            .filter(
+              (m) =>
+                (m.role === "user" || m.role === "assistant") &&
+                typeof m.content === "string" &&
+                m.content.trim()
+            )
+            .slice(-12);
+        }
+      } catch (error) {
+        console.warn("⚠️ Invalid history payload");
+      }
+    }
 
     let combinedText = "";
 
@@ -133,14 +153,37 @@ exports.chat = async (req, res) => {
 
     console.log("📊 Combined text length:", combinedText.length);
 
+    // Mode 1: regular chatbot behavior (no PDFs)
+    if (!files.length) {
+      if (!message) {
+        return res.status(400).json({ response: "Message is required." });
+      }
+
+      const chatMessages = [
+        {
+          role: "system",
+          content:
+            "You are LearnSphere AI, a concise and friendly engineering tutor. Explain concepts clearly, use short examples, and include exam-focused tips when useful.",
+        },
+        ...parsedHistory,
+        { role: "user", content: message },
+      ];
+
+      const aiResponse = await callOpenRouter(chatMessages, model);
+
+      return res.json({
+        response: aiResponse,
+      });
+    }
+
+    // Mode 2: PDF analysis mode
     if (!combinedText || combinedText.length < 50) {
       return res.json({
         response: "Could not extract enough content from PDFs.",
       });
     }
 
-    const prompt = `
-You are an expert exam analyzer.
+    const prompt = `You are an expert exam analyzer.
 
 From the following exam papers content:
 - Extract at least 15 important questions
@@ -148,11 +191,23 @@ From the following exam papers content:
 - Group similar questions
 - Format cleanly
 
+Additional user instruction (if any): ${message || "None"}
+
 CONTENT:
 ${combinedText}
 `;
 
-    const aiResponse = await callOpenRouter(prompt);
+    const aiResponse = await callOpenRouter(
+      [
+        {
+          role: "system",
+          content:
+            "You extract and organize important exam questions from uploaded papers in a clean, readable format.",
+        },
+        { role: "user", content: prompt },
+      ],
+      model
+    );
 
     res.json({
       response: aiResponse,

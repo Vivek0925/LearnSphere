@@ -7,8 +7,8 @@ const path = require("path");
 
 const app = express();
 
-// 🔥 DEBUG: check env loading
-console.log("🔑 OPENROUTER_API_KEY:", process.env.OPENROUTER_API_KEY);
+// 🔥 DEBUG: check env loading without exposing secret value
+console.log("🔑 OPENROUTER_API_KEY loaded:", !!process.env.OPENROUTER_API_KEY);
 
 // ================= MIDDLEWARE =================       
 app.use(
