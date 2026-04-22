@@ -187,7 +187,7 @@ function mergeAndRankVideos(primaryVideos, fallbackVideos, topic) {
     })
     .sort((a, b) => b.score - a.score);
 
-  return scored.map((entry) => entry.video).slice(0, 15);
+  return scored.map((entry) => entry.video).slice(0, 30);
 }
 
 async function buildAiTimestamps({ title, description, durationText, topic }) {

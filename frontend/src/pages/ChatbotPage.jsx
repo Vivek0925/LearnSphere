@@ -306,7 +306,8 @@ setAttachedFiles([]);
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                Online · Powered by OpenRouter
+                
+              
               </span>
             </div>
           </div>
@@ -459,7 +460,7 @@ setAttachedFiles([]);
                 style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}>
                 <Loader2 size={15} className="animate-spin text-primary-400" />
                 <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                  {FREE_MODELS.find(m => m.id === selectedModel)?.label.split(' (')[0]} is thinking...
+                  Thinking...
                 </span>
               </div>
             </motion.div>
@@ -627,7 +628,7 @@ setAttachedFiles([]);
           </div>
 
           <p className="text-xs text-center mt-2" style={{ color: "var(--color-text-muted)" }}>
-            Powered by OpenRouter · Attach PYQ PDFs for AI analysis · Shift+Enter for new line
+            Attach PYQ PDFs for AI analysis · Shift+Enter for new line
           </p>
         </div>
       </div>
