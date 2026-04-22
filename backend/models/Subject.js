@@ -16,10 +16,13 @@ const subjectSchema = new mongoose.Schema({
   icon: { type: String, default: '📚' },
   color: { type: String, default: '#6366f1' },
   topics: [topicSchema],
+
+  pdfUrl: { type: String }, // ✅ NEW
+
   difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
   totalQuestions: { type: Number, default: 0 },
-  semester: { type: Number, required: true, min: 1, max: 8 },  // NEW
-  branch: { type: String, default: 'CSE' }                      // NEW
+  semester: { type: Number, required: true, min: 1, max: 8 },
+  branch: { type: String, default: 'CSE' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Subject', subjectSchema);
