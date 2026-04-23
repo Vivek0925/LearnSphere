@@ -10,12 +10,9 @@ export const subjectService = {
 // ================= PYQ =================
 export const pyqService = {
   getAll: () => api.get("/pyq"),
-  getBySubject: (subjectId) => api.get(`/pyq/subject/${subjectId}`),
   getById: (id) => api.get(`/pyq/${id}`),
-  upload: (formData) =>
-    api.post("/pyq/upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
+  create: (payload) => api.post('/pyq', payload),
+  remove: (id) => api.delete(`/pyq/${id}`),
 };
 
 // ================= PROGRESS =================
@@ -55,6 +52,7 @@ export const chatbotService = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      timeout: 240000,
     });
   },
 };

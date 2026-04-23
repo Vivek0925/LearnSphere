@@ -24,6 +24,82 @@ const MODEL_MAP = {
   "qwen-2.5-7b": "qwen/qwen2.5-7b-instruct:free",
 };
 
+function toTitleCase(text) {
+  return String(text || "")
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function inferSubject(fileName = "") {
+  const base = path.basename(fileName, path.extname(fileName));
+  const cleaned = base
+    .replace(/[_-]+/g, " ")
+    .replace(/\b(19|20)\d{2}\b/g, "")
+    .replace(/\b(mid|midterm|end|endterm|semester|sem|final|exam|paper|pyq)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned ? toTitleCase(cleaned) : "General";
+}
+
+function inferYear(text = "") {
+  const matches = String(text).match(/\b(19|20)\d{2}\b/g);
+  if (!matches?.length) return new Date().getFullYear();
+  return Number(matches[matches.length - 1]);
+}
+
+function inferExamType(text = "") {
+  return /\b(mid|midterm)\b/i.test(text) ? "midterm" : "endterm";
+}
+
+function uniqueList(items) {
+  return [...new Set(items.map((i) => String(i || "").trim()).filter(Boolean))];
+}
+
+function extractQuestions(aiResponse = "") {
+  const lines = String(aiResponse).split("\n");
+
+  const numbered = lines
+    .map((line) => line.trim())
+    .filter((line) => /^(\d+\.|\d+\)|[-*•])\s+/.test(line))
+    .map((line) => line.replace(/^(\d+\.|\d+\)|[-*•])\s+/, ""))
+    .filter((line) => line.length > 10);
+
+  if (numbered.length) return uniqueList(numbered).slice(0, 30);
+
+  const sentenceFallback = String(aiResponse)
+    .split(/[\n\.]/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 20)
+    .slice(0, 20);
+
+  return uniqueList(sentenceFallback);
+}
+
+function extractTopics(aiResponse = "", questions = []) {
+  const topicLines = String(aiResponse)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^unit\s*\d+/i.test(line) || /^topic[:\s]/i.test(line) || /^##+\s+/.test(line))
+    .map((line) => line.replace(/^##+\s+/, "").replace(/^topic[:\s]*/i, "").replace(/^unit\s*\d+\s*[:.-]?\s*/i, "").trim())
+    .filter(Boolean);
+
+  if (topicLines.length) return uniqueList(topicLines).slice(0, 15);
+
+  const questionTopics = questions
+    .map((q) => {
+      const part = q.split(/[?.:,-]/)[0]?.trim();
+      return part && part.length <= 50 ? part : "";
+    })
+    .filter(Boolean)
+    .slice(0, 10);
+
+  return uniqueList(questionTopics).length ? uniqueList(questionTopics) : ["General"];
+}
+
 // ================= PDF TEXT EXTRACTION =================
 async function extractTextFromPDF(filePath) {
   try {
@@ -209,8 +285,24 @@ ${combinedText}
       model
     );
 
+    const firstFileName = files[0]?.originalname || "uploaded_pyq.pdf";
+    const inferenceText = `${firstFileName} ${message} ${combinedText.slice(0, 1200)}`;
+    const questions = extractQuestions(aiResponse);
+    const topics = extractTopics(aiResponse, questions);
+
+    const analysis = {
+      subject: inferSubject(firstFileName),
+      year: inferYear(inferenceText),
+      examType: inferExamType(inferenceText),
+      fileName: files.map((f) => f.originalname).join(", ") || firstFileName,
+      topics,
+      questions,
+    };
+
     res.json({
       response: aiResponse,
+      wasPDF: true,
+      analysis,
     });
   } catch (err) {
     console.error("❌ Chat error:", err.message);

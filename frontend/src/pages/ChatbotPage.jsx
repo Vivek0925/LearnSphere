@@ -5,7 +5,7 @@ import {
   BookOpen, FileQuestion, TrendingUp, Lightbulb,
   Loader2, Paperclip, X, FileText,
 } from "lucide-react";
-import { chatbotService } from "../services";
+import { chatbotService, pyqService } from "../services";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import * as pdfjsLib from "pdfjs-dist";
@@ -214,6 +214,17 @@ setAttachedFiles([]);
         filesToSend,
         { model: selectedModel } // sends selected OpenRouter free model key
       );
+
+      if (res.data?.wasPDF && res.data?.analysis) {
+        try {
+          await pyqService.create(res.data.analysis);
+          toast.success("PYQ analysis saved to history");
+        } catch (saveErr) {
+          console.error("Save PYQ failed:", saveErr);
+          toast.error("Analysis generated, but saving to history failed");
+        }
+      }
+
       setMessages((prev) => [
         ...prev,
         {
