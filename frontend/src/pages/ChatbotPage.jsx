@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Send, Bot, User, Sparkles, Trash2, Copy, Check,
+  Send, Bot, User, Sparkles, Copy, Check,
   BookOpen, FileQuestion, TrendingUp, Lightbulb,
-  ChevronDown, Loader2, Paperclip, X, FileText,
+  Loader2, Paperclip, X, FileText,
 } from "lucide-react";
 import { chatbotService } from "../services";
 import { useAuth } from "../context/AuthContext";
@@ -76,12 +76,7 @@ const SUGGESTED_PROMPTS = [
   { icon: Lightbulb,     label: "Quick sort vs merge sort",            color: "#8b5cf6" },
 ];
 
-const FREE_MODELS = [
-  { id: "llama-3.1-8b",   label: "Llama 3.1 8B (Free)" },
-  { id: "llama-3.2-3b",   label: "Llama 3.2 3B (Free)" },
-  { id: "mistral-7b",     label: "Mistral 7B (Free)" },
-  { id: "qwen-2.5-7b",    label: "Qwen 2.5 7B (Free)" },
-];
+const DEFAULT_MODEL = "llama-3.1-8b";
 
 function PDFPreview({ file }) {
   const canvasRef = React.useRef(null);
@@ -168,8 +163,7 @@ export default function ChatbotPage() {
   ]);
   const [input, setInput]               = useState("");
   const [loading, setLoading]           = useState(false);
-  const [selectedModel, setSelectedModel] = useState("llama-3.1-8b");
-  const [showModelPicker, setShowModelPicker] = useState(false);
+  const [selectedModel] = useState(DEFAULT_MODEL);
   const [copiedId, setCopiedId]         = useState(null);
   const [attachedFiles, setAttachedFiles] = useState([]);
 
@@ -199,7 +193,6 @@ export default function ChatbotPage() {
     if (loading) return;
 
     setInput("");
-    setShowModelPicker(false);
 
     const userMsg = {
       id: Date.now(),
@@ -282,103 +275,8 @@ setAttachedFiles([]);
   const formatTime = (date) =>
     new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  const getAssistantSourceLabel = (msg) => {
-    if (msg.fallback || msg.model === "local-fallback") return "Local fallback";
-    if (msg.model) return `Live AI · ${msg.model.split("/").pop()?.split(":")[0] || msg.model}`;
-    return "Live AI";
-  };
-
   return (
-    <div className="flex flex-col h-full animate-fade-in">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between mb-4 flex-shrink-0"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg"
-            style={{ boxShadow: "0 8px 24px rgba(111,97,255,0.3)" }}>
-            <Sparkles size={20} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold" style={{ color: "var(--color-text)" }}>AI Tutor</h1>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                
-              
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Model Picker */}
-          <div className="relative">
-            <button
-              onClick={() => setShowModelPicker((s) => !s)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all"
-              style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-border)",
-                color: "var(--color-text-muted)",
-              }}
-            >
-              <Bot size={13} />
-              <span className="hidden sm:block max-w-[140px] truncate">
-                {FREE_MODELS.find((m) => m.id === selectedModel)?.label || "Select model"}
-              </span>
-              <ChevronDown size={13} className={`transition-transform ${showModelPicker ? "rotate-180" : ""}`} />
-            </button>
-
-            <AnimatePresence>
-              {showModelPicker && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  className="absolute right-0 top-full mt-2 w-64 rounded-2xl z-50 overflow-hidden"
-                  style={{
-                    background: "var(--color-surface)",
-                    border: "1px solid var(--color-border)",
-                    boxShadow: "var(--shadow-glass)",
-                  }}
-                >
-                  <div className="p-2">
-                    <p className="text-xs font-semibold px-2 py-1.5 mb-1" style={{ color: "var(--color-text-muted)" }}>
-                      Free Models (OpenRouter)
-                    </p>
-                    {FREE_MODELS.map((model) => (
-                      <button
-                        key={model.id}
-                        onClick={() => { setSelectedModel(model.id); setShowModelPicker(false); }}
-                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs transition-all hover:bg-[var(--color-surface-2)] flex items-center justify-between"
-                        style={{ color: selectedModel === model.id ? "var(--color-primary)" : "var(--color-text)" }}
-                      >
-                        {model.label}
-                        {selectedModel === model.id && <Check size={12} className="text-primary-400" />}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Clear chat */}
-          <button
-            onClick={clearChat}
-            className="p-2.5 rounded-xl transition-all hover:bg-red-500/10 hover:text-red-400"
-            style={{ color: "var(--color-text-muted)", border: "1px solid var(--color-border)", background: "var(--color-surface)" }}
-            title="Clear chat"
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Chat card */}
+    <div className="flex flex-col h-full min-h-0 animate-fade-in">
       <div className="flex-1 flex flex-col min-h-0 card overflow-hidden">
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 scroll-smooth">
@@ -436,7 +334,11 @@ setAttachedFiles([]);
                         border: msg.fallback || msg.model === "local-fallback" ? "1px solid rgba(245,158,11,0.25)" : "1px solid rgba(16,185,129,0.25)",
                       }}
                     >
-                      {getAssistantSourceLabel(msg)}
+                      {msg.fallback || msg.model === "local-fallback"
+                        ? "Local fallback"
+                        : msg.model
+                          ? `Live AI · ${msg.model.split("/").pop()?.split(":")[0] || msg.model}`
+                          : "Live AI"}
                     </span>
                   )}
                   {msg.role === "assistant" && !msg.isError && (
@@ -627,9 +529,9 @@ setAttachedFiles([]);
             </motion.button>
           </div>
 
-          <p className="text-xs text-center mt-2" style={{ color: "var(--color-text-muted)" }}>
+          {/* <p className="text-xs text-center mt-2" style={{ color: "var(--color-text-muted)" }}>
             Attach PYQ PDFs for AI analysis · Shift+Enter for new line
-          </p>
+          </p> */}
         </div>
       </div>
     </div>

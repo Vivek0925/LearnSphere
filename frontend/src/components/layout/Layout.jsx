@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+  const isChatRoute = location.pathname.startsWith('/chat');
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--color-bg)' }}>
@@ -24,7 +26,9 @@ export default function Layout() {
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Scrollable Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main
+          className={`flex-1 w-full ${isChatRoute ? 'overflow-hidden p-0 max-w-none' : 'overflow-y-auto p-4 md:p-6 lg:p-8 max-w-7xl mx-auto'}`}
+        >
           <Outlet />
         </main>
 

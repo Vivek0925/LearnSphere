@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -17,12 +15,11 @@ const navItems = [
   { path: '/chat', icon: Bot, label: 'AI Tutor', highlight: true },
 ];
 
-export default function Sidebar({ open, onClose }) {
+function SidebarContent({ onClose }) {
   const location = useLocation();
 
-  const SidebarContent = () => (
+  return (
     <div className="flex flex-col h-full py-6 px-4">
-      {/* Logo */}
       <div className="flex items-center gap-3 px-2 mb-8">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg">
           <Sparkles size={18} className="text-white" />
@@ -31,17 +28,17 @@ export default function Sidebar({ open, onClose }) {
           <p className="font-bold text-lg leading-none" style={{ color: 'var(--color-text)' }}>
             Learn<span className="text-primary-500">Sphere</span>
           </p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>AI Learning Platform</p>
+          {/* <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>AI Learning Platform</p> */}
         </div>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 space-y-1">
         <p className="text-xs font-semibold uppercase tracking-widest px-3 mb-3" style={{ color: 'var(--color-text-muted)', opacity: 0.6 }}>
           Navigation
         </p>
         {navItems.map(({ path, icon: Icon, label }) => {
           const active = location.pathname === path || location.pathname.startsWith(path + '/');
+
           return (
             <NavLink
               key={path}
@@ -56,24 +53,11 @@ export default function Sidebar({ open, onClose }) {
           );
         })}
       </nav>
-
-      {/* Footer card */}
-      <div className="mt-6 p-4 rounded-2xl"
-        style={{
-          background: 'linear-gradient(135deg, rgba(111,97,255,0.15), rgba(143,135,255,0.08))',
-          border: '1px solid rgba(111,97,255,0.2)'
-        }}>
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles size={14} className="text-primary-400" />
-          <span className="text-xs font-semibold text-primary-400">AI Powered</span>
-        </div>
-        <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-          Adaptive learning that evolves with your performance.
-        </p>
-      </div>
     </div>
   );
+}
 
+export default function Sidebar({ open, onClose }) {
   return (
     <>
       {/* Desktop sidebar */}

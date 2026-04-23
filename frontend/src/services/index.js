@@ -64,6 +64,7 @@ export const notesService = {
   getAll: (params) => api.get("/notes", { params }),
   getBySubject: (subjectName) => api.get(`/notes/subject/${subjectName}`),
   getById: (id) => api.get(`/notes/${id}`),
+  searchWeb: (q) => api.get('/notes/web-search', { params: { q } }),
 };
 
 // ================= VIDEOS =================

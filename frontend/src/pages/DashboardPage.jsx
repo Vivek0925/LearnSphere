@@ -167,7 +167,7 @@ export default function DashboardPage() {
           ].map((item, i) => (
             <motion.div key={item.to} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.05 }} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Link to={item.to} className="card p-4 flex items-center gap-3 hover:border-primary-400/40 transition-all block">
+              <Link to={item.to} className="card p-4 flex items-center gap-3 hover:border-primary-400/40 transition-all">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
                   style={{ background: `${item.color}15` }}>
                   {item.icon}

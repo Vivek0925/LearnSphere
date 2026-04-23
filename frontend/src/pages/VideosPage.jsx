@@ -84,7 +84,7 @@ export default function VideosPage() {
         }
       />
 
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex items-start gap-3 p-4 rounded-2xl"
@@ -102,7 +102,7 @@ export default function VideosPage() {
             Search any topic directly and open any card to watch with generated chapter timestamps.
           </p>
         </div>
-      </motion.div>
+      </motion.div> */}
 
       {/* 🔍 SEARCH BAR */}
       <motion.div
