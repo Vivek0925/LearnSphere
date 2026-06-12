@@ -8,10 +8,9 @@ import {
 const navItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/subjects', icon: BookOpen, label: 'Subjects' },
-  { path: '/pyq', icon: FileQuestion, label: 'PYQ Analysis' },
+  { path: '/pyq', icon: FileQuestion, label: 'Analysis History' },
   { path: '/notes', icon: StickyNote, label: 'Notes' },
-  { path: '/videos', icon: Video, label: 'Smart Videos' },
-  { path: '/progress', icon: TrendingUp, label: 'My Progress' },
+  { path: '/videos', icon: Video, label: 'Videos' },
   { path: '/chat', icon: Bot, label: 'AI Tutor', highlight: true },
 ];
 
