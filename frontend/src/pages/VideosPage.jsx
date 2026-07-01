@@ -137,9 +137,6 @@ export default function VideosPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h3 className="font-bold text-lg" style={{ color: 'var(--color-text)' }}>
           Search Results
-          <span className="text-sm font-normal ml-2" style={{ color: 'var(--color-text-muted)' }}>
-            ({videos.length})
-          </span>
         </h3>
       </div>
 
