@@ -14,7 +14,7 @@ import SubjectDetailPage from './pages/SubjectDetailPage';
 import PYQPage from './pages/PYQPage';
 import NotesPage from './pages/NotesPage';
 import VideosPage from './pages/VideosPage';
-import ProgressPage from './pages/ProgressPage';
+
 
 // Layout
 import Layout from './components/layout/Layout';
@@ -52,7 +52,6 @@ function AppRoutes() {
         <Route path="pyq" element={<PYQPage />} />
         <Route path="notes" element={<NotesPage />} />
         <Route path="videos" element={<VideosPage />} />
-        <Route path="progress" element={<ProgressPage />} />
         <Route path="chat" element={<ChatbotPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" />} />
